@@ -1,0 +1,28 @@
+# dependencies
+/node_modules
+
+# production
+/dist
+/build
+
+# misc
+.DS_Store
+*.log
+
+# local env files
+.env*
+!.env.example
+
+# OS
+Thumbs.db
+
+# Vite
+.vite
+
+# Supabase
+.supabase
+
+# VSCode
+.vscode
+node_modules/
+.env
