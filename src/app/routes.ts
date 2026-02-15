@@ -11,11 +11,10 @@ import Admin from "./pages/Admin";
 import AdminForm from "./pages/AdminForm";
 import AdminDetail from "./pages/AdminDetail";
 
-export const router = createBrowserRouter(
-  [
-    {
-      path: "/",
-      Component: Root,
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    Component: Root,
     children: [
       { index: true, Component: Home },
       { path: "track", Component: TrackShipment },
@@ -32,10 +31,9 @@ export const router = createBrowserRouter(
           { path: "view/:id", Component: AdminDetail },
         ],
       },
-      // { path: "*", Component: NotFound },
+      { path: "*", Component: Home },
     ],
   },
-  {
-    basename: process.env.NODE_ENV === 'production' ? '/Globalgo' : '/',
-  }
-);
+], {
+  basename: import.meta.env.PROD ? '/Globalgo/' : '/',
+});
