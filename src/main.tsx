@@ -6,8 +6,8 @@
   const root = createRoot(document.getElementById("root")!);
   root.render(<App />);
 
-  // Register service worker manually (works even if Vite PWA plugin isn't installed)
-  if ('serviceWorker' in navigator) {
+  // Register service worker only in production (avoid dev interference)
+  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').then((registration) => {
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
