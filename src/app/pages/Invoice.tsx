@@ -25,9 +25,9 @@ function InvoiceDocument({ data }: { data: any }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Image src="/logo1.jpeg" style={styles.logo} />
+          <Image src="/assets/images/buske-logo.jpeg" style={styles.logo} />
           <View>
-            <Text>Globago Logistics</Text>
+            <Text>Buske Logistics</Text>
             <Text>{format(new Date(), "PPP")}</Text>
           </View>
           <View>

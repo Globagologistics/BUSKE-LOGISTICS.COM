@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
       tailwindcss(),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'assets/images/logo1.jpeg'],
+          includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'assets/images/buske-logo.jpeg'],
           manifest: {
             name: 'Buske Logistics',
             short_name: 'Buske',

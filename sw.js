@@ -3,7 +3,7 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/favicon.ico',
-  '/assets/images/logo1.jpeg',
+  '/assets/images/buske-logo.jpeg',
   '/site.webmanifest'
 ];
 

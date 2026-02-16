@@ -74,7 +74,7 @@ export default function Home() {
     },
     {
       icon: Shield,
-      title: "Global Security",
+      title: "Worldwide Security",
       description: "Industry-leading security protocols and comprehensive insurance for complete peace of mind.",
     },
     {
@@ -101,7 +101,7 @@ export default function Home() {
       name: "Emma Williams",
       location: "London, UK",
       rating: 5,
-      comment: "The most trustworthy logistics partner we've ever worked with. Their global network is truly impressive.",
+      comment: "The most trustworthy logistics partner we've ever worked with. Buske's worldwide network is truly impressive.",
     },
   ];
 
