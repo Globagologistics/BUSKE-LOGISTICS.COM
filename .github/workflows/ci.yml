@@ -22,8 +22,12 @@ jobs:
         run: npm run lint
       - name: Run tests
         run: npm run test --if-present
-      - name: Build
-        run: npm run build
+      - name: Clean previous build
+        run: npm run clean
+      - name: Build (including 404 copy)
+        run: |
+          npm run build
+          cp dist/index.html dist/404.html
       - name: Upload production build artifacts
         uses: actions/upload-artifact@v4
         with:
