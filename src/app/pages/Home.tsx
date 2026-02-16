@@ -401,6 +401,67 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Partners Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-[#0F1F3D] mb-4">
+              Trusted by Global Partners
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Partnering with industry leaders and innovative companies worldwide
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center">
+            {[
+              { name: "Global Exports Inc", initials: "GE" },
+              { name: "Pacific Trade Co", initials: "PT" },
+              { name: "Euro Shipping Ltd", initials: "ES" },
+              { name: "Asia Logistics", initials: "AL" },
+              { name: "North America Freight", initials: "NAF" },
+              { name: "Worldwide Carriers", initials: "WC" },
+            ].map((partner, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="w-full max-w-xs"
+              >
+                <div className="h-24 bg-gradient-to-br from-[#0F1F3D] to-[#2563EB] rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-white group-hover:text-[#38BDF8] transition-colors">
+                      {partner.initials}
+                    </div>
+                    <div className="text-xs text-white/70 mt-1 text-center px-2">
+                      {partner.name}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Join 500+ enterprise clients and logistics partners who trust Buske Logistics for their critical shipping needs
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-br from-[#2563EB] to-[#38BDF8] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
