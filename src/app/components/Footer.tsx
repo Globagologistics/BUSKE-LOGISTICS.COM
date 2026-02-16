@@ -47,7 +47,7 @@ export function Footer() {
           <div>
             <Link to="/" className="flex items-center gap-3 mb-6">
               <img
-                src="%BASE_URL%assets/images/buske-logo.jpeg"
+                src="/assets/images/buske-logo.jpeg"
                 alt="Buske Logistics logo"
                 className="w-12 h-12 rounded-full object-cover shadow-lg"
               />
