@@ -1,7 +1,7 @@
 
-  # Redesign Global-Go Website
+  # Buske Logistics Website
 
-This repository contains the front‑end of the Global-Go logistics site designed using Figma and built with React, Vite and Tailwind CSS. The goal is a production‑ready, responsive, SEO‑optimized, accessible, and deployable static site.
+This repository contains the front‑end of the Buske Logistics site designed using Figma and built with React, Vite and Tailwind CSS. The goal is a production‑ready, responsive, SEO‑optimized, accessible, and deployable static site.
 
 ## Features
 * Full fidelity Figma design reproduced with React components
@@ -42,7 +42,7 @@ npm run deploy
 
 You can also configure other providers by uploading the contents of the `dist` directory.
 
-  This is a code bundle for Redesign Global-Go Website. The original project is available at https://www.figma.com/design/H0QZC7IttP9eKJYvPdYEbO/Redesign-Global-Go-Website.
+  This is a code bundle for the Buske Logistics website. The original project is available at https://www.figma.com/design/H0QZC7IttP9eKJYvPdYEbO/Redesign-Buske-Logistics-Website if you need the Figma source.
 
   ## Running the code
 

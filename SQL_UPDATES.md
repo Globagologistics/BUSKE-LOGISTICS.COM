@@ -32,7 +32,7 @@ CREATE POLICY "Allow checkpoint creation" ON public.checkpoints
 
 -- Insert default admin user
 INSERT INTO public.users (id, email, user_type, full_name)
-VALUES ('00000000-0000-0000-0000-000000000000', 'admin@global-go.local', 'admin', 'Default Admin')
+VALUES ('00000000-0000-0000-0000-000000000000', 'admin@buske.local', 'admin', 'Default Admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- Add images column if missing

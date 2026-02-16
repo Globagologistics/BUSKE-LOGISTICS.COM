@@ -27,7 +27,7 @@
 
 ### 1. Open Supabase SQL Editor
 1. Go to https://supabase.com → Dashboard
-2. Select your project: **global-go**
+2. Select your project: **buske**
 3. Click **SQL Editor** in left sidebar
 4. Click **New Query**
 

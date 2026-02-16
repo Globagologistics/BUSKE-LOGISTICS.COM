@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 
 -- Insert default admin user for development
 INSERT INTO public.users (id, email, user_type, full_name)
-VALUES ('00000000-0000-0000-0000-000000000000', 'admin@global-go.local', 'admin', 'Default Admin')
+VALUES ('00000000-0000-0000-0000-000000000000', 'admin@buske.local', 'admin', 'Default Admin')
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS public.shipments (
@@ -129,5 +129,5 @@ ALTER TABLE public.shipments
 
 -- Ensure default admin user exists
 INSERT INTO public.users (id, email, user_type, full_name)
-VALUES ('00000000-0000-0000-0000-000000000000', 'admin@global-go.local', 'admin', 'Default Admin')
+VALUES ('00000000-0000-0000-0000-000000000000', 'admin@buske.local', 'admin', 'Default Admin')
 ON CONFLICT (email) DO NOTHING;

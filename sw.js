@@ -1,4 +1,4 @@
-const CACHE_NAME = 'global-go-cache-v1';
+const CACHE_NAME = 'buske-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
