@@ -1,41 +1,29 @@
-import { Link, useNavigate } from "react-router";
-import { useContext, useState, useEffect } from "react";
-import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
+import React from "react";
+import { Link } from "react-router";
+import { useContext, useEffect, useState } from "react";
+import { Mail, Phone, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 import { AdminContext } from "../contexts/AdminContext";
 
 export function Footer() {
-  const navigate = useNavigate();
   const { unlockAdmin } = useContext(AdminContext);
-  const [clicks, setClicks] = useState(0);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
 
   useEffect(() => {
-    const handler = (e: any) => {
+    const handler = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
-      (window as any).deferredPWAInstallPrompt = e;
+      (window as { deferredPWAInstallPrompt?: BeforeInstallPromptEvent }).deferredPWAInstallPrompt = e;
       setDeferredPrompt(e);
       setShowInstall(true);
     };
     window.addEventListener('beforeinstallprompt', handler as EventListener);
-    const existing = (window as any).deferredPWAInstallPrompt;
+    const existing = (window as { deferredPWAInstallPrompt?: BeforeInstallPromptEvent }).deferredPWAInstallPrompt;
     if (existing) {
       setDeferredPrompt(existing);
       setShowInstall(true);
     }
     return () => window.removeEventListener('beforeinstallprompt', handler as EventListener);
-  }, []);
-
-  const handleCopyright = () => {
-    setClicks((c) => {
-      const next = c + 1;
-      if (next === 5) {
-        unlockAdmin();
-        navigate('/admin');
-      }
-      return next;
-    });
-  };
+  }, [unlockAdmin]);
 
   const solutions = [
     'Warehousing',
@@ -55,26 +43,6 @@ export function Footer() {
     'Industrials',
     'Retailers and Distributors',
     'Industries Served',
-  ];
-
-  const resources = [
-    'Complete 3PL Guide',
-    'Top 3PL Companies',
-    '3PL Glossary',
-    '3PL Pricing Guide',
-    '3PL RFP Template',
-    '3PL For Served Markets',
-    'Partners Served',
-  ];
-
-  const aboutItems = [
-    'About Buske',
-    'Our Team',
-    'In the News',
-    'Careers',
-    'Privacy Policy',
-    'Warehouse Locations Served',
-    '3PL Fulfillment Centers',
   ];
 
   return (

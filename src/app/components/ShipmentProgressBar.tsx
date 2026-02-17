@@ -1,10 +1,11 @@
 import { Truck, Plane, Ship } from "lucide-react";
 import { motion } from "motion/react";
+import { Checkpoint } from "../types/database";
 
 interface ShipmentProgressBarProps {
   progress: number; // 0-100
   transportMode: string;
-  checkpoints?: any[];
+  checkpoints?: Checkpoint[];
   status?: string;
   vehiclesCount?: number;
 }
@@ -96,7 +97,7 @@ function LandProgressBar({ progress, checkpoints, status, vehiclesCount = 1 }: O
           </motion.div>
         ))}
         {/* Checkpoint markers */}
-        {(checkpoints || []).map((cp: any, i: number) => (
+        {(checkpoints || []).map((cp: Checkpoint, i: number) => (
           <div
             key={i}
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transform -translate-x-1/2 pointer-events-none"
@@ -184,7 +185,7 @@ function AirProgressBar({ progress, checkpoints, status }: Omit<ShipmentProgress
         </motion.div>
 
         {/* Checkpoint markers */}
-        {(checkpoints || []).map((cp: any, i: number) => (
+        {(checkpoints || []).map((cp: Checkpoint, i: number) => (
           <div
             key={i}
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transform -translate-x-1/2 pointer-events-none"
@@ -297,7 +298,7 @@ function SeaProgressBar({ progress, checkpoints, status }: Omit<ShipmentProgress
         </motion.div>
 
         {/* Checkpoint markers */}
-        {(checkpoints || []).map((cp: any, i: number) => (
+        {(checkpoints || []).map((cp: Checkpoint, i: number) => (
           <div
             key={i}
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transform -translate-x-1/2 pointer-events-none z-5"

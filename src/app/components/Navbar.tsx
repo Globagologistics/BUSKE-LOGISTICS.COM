@@ -10,7 +10,7 @@ export function Navbar() {
   const { unlockAdmin } = useContext(AdminContext);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
 
   const navLinks = [
@@ -27,7 +27,7 @@ export function Navbar() {
   };
 
   useEffect(() => {
-    const handler = (e: any) => {
+    const handler = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstall(true);
