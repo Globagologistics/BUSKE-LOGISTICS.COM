@@ -3,7 +3,7 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/favicon.ico',
-  '/assets/images/buske-logo.jpeg',
+  // logo is now loaded from remote URL, no need to cache locally
   '/site.webmanifest'
 ];
 

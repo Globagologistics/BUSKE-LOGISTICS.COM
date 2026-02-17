@@ -767,7 +767,7 @@ export default function TrackShipment() {
             className="text-center py-20"
           >
             <img
-              src={import.meta.env.BASE_URL + 'assets/images/buske-logo.jpeg'}
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwdV07RyApr_mVZOJRk3Rht0P98deLiSYB0Q&s"
               alt="Buske Logistics logo"
               className="w-24 h-24 rounded-2xl object-cover mx-auto mb-6 shadow-xl"
             />

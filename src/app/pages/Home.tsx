@@ -130,7 +130,7 @@ export default function Home() {
             className="flex justify-center mb-8"
           >
             <img
-              src={import.meta.env.BASE_URL + 'assets/images/buske-logo.jpeg'}
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwdV07RyApr_mVZOJRk3Rht0P98deLiSYB0Q&s"
               alt="Buske Logistics logo"
               className="w-20 h-20 rounded-full object-cover shadow-2xl shadow-blue-500/30"
             />
