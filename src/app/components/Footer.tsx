@@ -84,11 +84,16 @@ export function Footer() {
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-3 mb-4">
               <img
-                src="https://media.licdn.com/dms/image/v2/C560BAQGvHNiZmDL7-g/company-logo_200_200/company-logo_200_200/0/1658438857743/buske_logistics_logo?e=2147483647&v=beta&t=iEthzy1XB3dnhzxGhvblN8T-WwtphunHvL51pWRD__8"
+                src="%BASE_URL%assets/images/buske-logo.jpeg"
                 alt="Buske Logistics logo"
-                className="w-10 h-10 rounded-full object-cover shadow-lg"
+                className="w-12 h-12 rounded-full object-cover shadow-lg"
               />
-              <div className="font-bold text-lg">Buske Logistics</div>
+              <div>
+                <div className="font-bold text-xl">Buske Logistics</div>
+                <div className="text-xs text-gray-400">
+                  Your Trusted Global Logistics Partner
+                </div>
+              </div>
             </Link>
             <p className="text-gray-400 text-xs leading-relaxed mb-3 font-medium">
               Your Trusted Global Partner
@@ -137,45 +142,17 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider mb-4">Resources</h3>
-            <ul className="space-y-2">
-              {resources.map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">
-                    {item}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider mb-4">About</h3>
-            <ul className="space-y-2">
-              {aboutItems.map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">
-                    {item}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider mb-4">Contact Us</h3>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-2">
-                <Mail className="w-4 h-4 text-[#38BDF8] mt-0.5 flex-shrink-0" />
-                <a href="mailto:buskelogistics141@gmail.com" className="text-gray-500 hover:text-white text-xs transition-colors break-all">buskelogistics141@gmail.com</a>
+            <h3 className="font-semibold text-lg mb-6">Contact Us</h3>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-[#38BDF8] mt-0.5 flex-shrink-0" />
+                <span className="text-gray-400 text-sm">
+                  buskelogistics141@gmail.com
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <Phone className="w-4 h-4 text-[#38BDF8] mt-0.5 flex-shrink-0" />
                 <a href="tel:+13364596552" className="text-gray-500 hover:text-white text-xs transition-colors">+1(336)4596552</a>
-              </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-[#38BDF8] mt-0.5 flex-shrink-0" />
-                <address className="text-gray-500 not-italic text-xs leading-relaxed">#7 Gateway Commerce Center Dr. W, Suite 7, Edwardsville, IL 62025</address>
               </li>
             </ul>
           </div>
@@ -183,11 +160,19 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p onClick={handleCopyright} className="text-gray-500 text-xs cursor-pointer hover:text-gray-400 transition-colors">© 2026 Buske Logistics. All rights reserved.</p>
-            <div className="flex flex-wrap gap-4 items-center justify-center md:justify-end">
-              <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">Privacy Policy</a>
-              <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">Terms of Service</a>
-              <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">Cookie Policy</a>
+            <p className="text-gray-400 text-sm">
+              © {new Date().getFullYear()} Buske Logistics. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Privacy Policy
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Terms of Service
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Cookie Policy
+              </a>
               {showInstall && (
                 <button onClick={async () => {
                   const evt = deferredPrompt || (window as any).deferredPWAInstallPrompt;

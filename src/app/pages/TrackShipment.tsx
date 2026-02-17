@@ -767,7 +767,7 @@ export default function TrackShipment() {
             className="text-center py-20"
           >
             <img
-              src="https://media.licdn.com/dms/image/v2/C560BAQGvHNiZmDL7-g/company-logo_200_200/company-logo_200_200/0/1658438857743/buske_logistics_logo?e=2147483647&v=beta&t=iEthzy1XB3dnhzxGhvblN8T-WwtphunHvL51pWRD__8"
+              src="%BASE_URL%assets/images/buske-logo.jpeg"
               alt="Buske Logistics logo"
               className="w-24 h-24 rounded-2xl object-cover mx-auto mb-6 shadow-xl"
             />

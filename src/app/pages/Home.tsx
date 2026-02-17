@@ -130,7 +130,7 @@ export default function Home() {
             className="flex justify-center mb-8"
           >
             <img
-              src="https://media.licdn.com/dms/image/v2/C560BAQGvHNiZmDL7-g/company-logo_200_200/company-logo_200_200/0/1658438857743/buske_logistics_logo?e=2147483647&v=beta&t=iEthzy1XB3dnhzxGhvblN8T-WwtphunHvL51pWRD__8"
+              src="%BASE_URL%assets/images/buske-logo.jpeg"
               alt="Buske Logistics logo"
               className="w-20 h-20 rounded-full object-cover shadow-2xl shadow-blue-500/30"
             />

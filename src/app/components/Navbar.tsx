@@ -63,7 +63,7 @@ export function Navbar() {
             className="cursor-pointer flex items-center gap-3 group"
           >
             <img
-              src="https://media.licdn.com/dms/image/v2/C560BAQGvHNiZmDL7-g/company-logo_200_200/company-logo_200_200/0/1658438857743/buske_logistics_logo?e=2147483647&v=beta&t=iEthzy1XB3dnhzxGhvblN8T-WwtphunHvL51pWRD__8"
+              src="%BASE_URL%assets/images/buske-logo.jpeg"
               alt="Buske Logistics logo"
               className="w-12 h-12 rounded-full object-cover shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105"
             />
