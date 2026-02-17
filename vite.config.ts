@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ command, mode }) => {
   const isProd = mode === 'production';
   return {
-    base: isProd ? '/buske/' : '/',
+    base: isProd ? '/BUSKE-LOGISTICS.COM/' : '/',
     plugins: [
       // The React and Tailwind plugins are both required for Make, even if
       // Tailwind is not being actively used – do not remove them
@@ -24,16 +24,16 @@ export default defineConfig(({ command, mode }) => {
           theme_color: '#2563EB',
           background_color: '#ffffff',
           display: 'standalone',
-          start_url: '/',
+          start_url: '/BUSKE-LOGISTICS.COM/',
           icons: [
             {
-              src: '/assets/icons/icon-192.svg',
+              src: '/BUSKE-LOGISTICS.COM/assets/icons/icon-192.svg',
               sizes: '192x192',
               type: 'image/svg+xml',
               purpose: 'any maskable'
             },
             {
-              src: '/assets/icons/icon-512.svg',
+              src: '/BUSKE-LOGISTICS.COM/assets/icons/icon-512.svg',
               sizes: '512x512',
               type: 'image/svg+xml',
               purpose: 'any maskable'
