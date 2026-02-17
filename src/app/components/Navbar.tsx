@@ -63,7 +63,7 @@ export function Navbar() {
             className="cursor-pointer flex items-center gap-3 group"
           >
             <img
-              src="%BASE_URL%assets/images/buske-logo.jpeg"
+              src={import.meta.env.BASE_URL + 'assets/images/buske-logo.jpeg'}
               alt="Buske Logistics logo"
               className="w-12 h-12 rounded-full object-cover shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105"
             />
