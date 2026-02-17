@@ -127,6 +127,10 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         const { data, error } = await shipmentService.getAdminShipments(adminId);
         if (error) {
           console.error('❌ Error fetching shipments:', error);
+          // display more detail for 500 server errors if available
+          if (typeof error === 'object' && error !== null) {
+            console.error('   detailed error object:', error);
+          }
           setError(error);
           setShipments([]);
           return;

@@ -96,7 +96,7 @@ export async function getShipment(id: string) {
 
 export async function getAdminShipments(adminId: string) {
   try {
-    const { data, error } = await supabase
+    const response = await supabase
       .from('shipments')
       .select(`
         *,
@@ -105,12 +105,30 @@ export async function getAdminShipments(adminId: string) {
       .eq('admin_id', adminId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    // log full supabase response for debugging
+    console.debug('Supabase getAdminShipments response:', response);
+
+    const { data, error, status, statusText } = response as any;
+    if (error) {
+      // capture helpful metadata when a server error occurs
+      console.error('Supabase error fetching admin shipments', {
+        adminId,
+        status,
+        statusText,
+        message: error.message,
+        details: (error as any).details,
+        hint: (error as any).hint,
+      });
+      throw error;
+    }
+
     return { data: data || [], error: null };
   } catch (error) {
+    // propagate message but keep debug info in console
+    const msg = error instanceof Error ? error.message : 'Failed to fetch shipments';
     return {
       data: [],
-      error: error instanceof Error ? error.message : 'Failed to fetch shipments',
+      error: msg,
     };
   }
 }
