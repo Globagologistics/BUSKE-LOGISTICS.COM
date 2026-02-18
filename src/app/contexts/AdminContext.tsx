@@ -1,7 +1,7 @@
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import * as shipmentService from '../../services/shipmentService';
 import { supabase } from '../../lib/supabase';
-import type { Shipment as DBShipment, Checkpoint as DBCheckpoint } from '../../types/database';
+import type { Shipment as DBShipment, Checkpoint as DBCheckpoint, ShipmentWithCheckpoints } from '../../types/database';
 
 export interface Checkpoint extends DBCheckpoint {
   id: string;
@@ -13,9 +13,10 @@ export interface Shipment {
   id: string;
   senderName: string;
   senderPhone: string;
+  senderEmail?: string;
   receiverName: string;
   receiverPhone: string;
-  receiverEmail: string;
+  receiverEmail?: string;
   pickupLocation?: string;
   deliveryAddress: string;
   warehouse: string;
@@ -36,6 +37,7 @@ export interface Shipment {
   countdownDuration?: number;
   countdownStartTime?: string;
   pauseTimestamp?: string;
+  routeScreenshot?: File | FileList;
   admin_id?: string;
   status?: string;
 }
@@ -146,21 +148,22 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         console.log('✅ Fetched', data.length, 'shipments');
         
         // Transform DB shipments to local format
-        const transformedShipments: Shipment[] = (data as DBShipment[]).map((ship: DBShipment) => {
+        const transformedShipments: Shipment[] = (data as ShipmentWithCheckpoints[]).map((ship: ShipmentWithCheckpoints) => {
           console.log(`📦 Transforming shipment ${ship.id} with ${ship.checkpoints?.length || 0} checkpoints`);
           return {
             id: ship.id,
             senderName: ship.sender_name,
             senderPhone: ship.sender_phone,
+            senderEmail: ship.sender_email,
             receiverName: ship.receiver_name,
             receiverPhone: ship.receiver_phone,
-            receiverEmail: ship.receiver_email,
+            receiverEmail: ship.receiver_email || '',
             pickupLocation: ship.pickup_location,
             deliveryAddress: ship.delivery_address,
-            warehouse: ship.warehouse,
+            warehouse: ship.warehouse || '',
             transportation: ship.transportation,
-            packageName: ship.package_name,
-            images: (ship.images || []).map((i: any) => resolveStorageUrl(i, 'shipment-images')),
+            packageName: ship.package_name || '',
+            images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
             vehiclesCount: ship.vehicles_count,
@@ -290,9 +293,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         // Create checkpoints
         if (data.checkpoints && data.checkpoints.length > 0) {
           console.log('📍 Creating', data.checkpoints.length, 'checkpoints...');
-          const checkpointData = data.checkpoints.map((cp: any) => ({
+          const checkpointData: Partial<DBCheckpoint>[] = data.checkpoints.map((cp: Checkpoint) => ({
             location: cp.location,
-            status: 'pending',
+            status: 'pending' as const,
           }));
           const { data: createdCheckpoints, error: checkpointError } = await shipmentService.createCheckpoints(id, checkpointData);
           if (checkpointError) {
@@ -387,20 +390,20 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         // Refresh shipments
         const { data: refreshedShipments } = await shipmentService.getAdminShipments(adminId);
         if (refreshedShipments) {
-          const transformedShipments: Shipment[] = (refreshedShipments as any[]).map((ship: any) => ({
+          const transformedShipments: Shipment[] = (refreshedShipments as ShipmentWithCheckpoints[]).map((ship: ShipmentWithCheckpoints) => ({
             id: ship.id,
             senderName: ship.sender_name,
             senderPhone: ship.sender_phone,
+            senderEmail: ship.sender_email,
             receiverName: ship.receiver_name,
             receiverPhone: ship.receiver_phone,
-            receiverEmail: ship.receiver_email,
+            receiverEmail: ship.receiver_email || '',
             pickupLocation: ship.pickup_location,
             deliveryAddress: ship.delivery_address,
-            warehouse: ship.warehouse,
+            warehouse: ship.warehouse || '',
             transportation: ship.transportation,
-            packageName: ship.package_name,
-              images: (ship.images || []).map((i: any) => resolveStorageUrl(i, 'shipment-images')),
-              routeScreenshot: resolveStorageUrl(ship.route_screenshot_url, 'route-screenshots'),
+            packageName: ship.package_name || '',
+            images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
             vehiclesCount: ship.vehicles_count,
@@ -444,20 +447,20 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         // Refresh shipments
         const { data: refreshedShipments } = await shipmentService.getAdminShipments(adminId);
         if (refreshedShipments) {
-          const transformedShipments: Shipment[] = (refreshedShipments as any[]).map((ship: any) => ({
+          const transformedShipments: Shipment[] = (refreshedShipments as ShipmentWithCheckpoints[]).map((ship: ShipmentWithCheckpoints) => ({
             id: ship.id,
             senderName: ship.sender_name,
             senderPhone: ship.sender_phone,
+            senderEmail: ship.sender_email,
             receiverName: ship.receiver_name,
             receiverPhone: ship.receiver_phone,
-            receiverEmail: ship.receiver_email,
+            receiverEmail: ship.receiver_email || '',
             pickupLocation: ship.pickup_location,
             deliveryAddress: ship.delivery_address,
-            warehouse: ship.warehouse,
+            warehouse: ship.warehouse || '',
             transportation: ship.transportation,
-            packageName: ship.package_name,
-            images: (ship.images || []).map((i: any) => resolveStorageUrl(i, 'shipment-images')),
-            routeScreenshot: resolveStorageUrl(ship.route_screenshot_url, 'route-screenshots'),
+            packageName: ship.package_name || '',
+            images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
             vehiclesCount: ship.vehicles_count,
@@ -527,20 +530,20 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         // Refresh shipments
         const { data: refreshedShipments } = await shipmentService.getAdminShipments(adminId);
         if (refreshedShipments) {
-          const transformedShipments: Shipment[] = (refreshedShipments as any[]).map((ship: any) => ({
+          const transformedShipments: Shipment[] = (refreshedShipments as ShipmentWithCheckpoints[]).map((ship: ShipmentWithCheckpoints) => ({
             id: ship.id,
             senderName: ship.sender_name,
             senderPhone: ship.sender_phone,
+            senderEmail: ship.sender_email,
             receiverName: ship.receiver_name,
             receiverPhone: ship.receiver_phone,
-            receiverEmail: ship.receiver_email,
+            receiverEmail: ship.receiver_email || '',
             pickupLocation: ship.pickup_location,
             deliveryAddress: ship.delivery_address,
-            warehouse: ship.warehouse,
+            warehouse: ship.warehouse || '',
             transportation: ship.transportation,
-            packageName: ship.package_name,
-            images: (ship.images || []).map((i: any) => resolveStorageUrl(i, 'shipment-images')),
-            routeScreenshot: resolveStorageUrl(ship.route_screenshot_url, 'route-screenshots'),
+            packageName: ship.package_name || '',
+            images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
             vehiclesCount: ship.vehicles_count,
@@ -578,25 +581,25 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         // Refresh shipments
         const { data: refreshedShipments } = await shipmentService.getAdminShipments(adminId);
         if (refreshedShipments) {
-          const transformedShipments: Shipment[] = (refreshedShipments as any[]).map((ship: any) => ({
+          const transformedShipments: Shipment[] = (refreshedShipments as ShipmentWithCheckpoints[]).map((ship: ShipmentWithCheckpoints) => ({
             id: ship.id,
             senderName: ship.sender_name,
             senderPhone: ship.sender_phone,
+            senderEmail: ship.sender_email,
             receiverName: ship.receiver_name,
             receiverPhone: ship.receiver_phone,
-            receiverEmail: ship.receiver_email,
+            receiverEmail: ship.receiver_email || '',
+            pickupLocation: ship.pickup_location,
             deliveryAddress: ship.delivery_address,
-            warehouse: ship.warehouse,
+            warehouse: ship.warehouse || '',
             transportation: ship.transportation,
-            packageName: ship.package_name,
-            images: ship.images || [],
-            routeScreenshot: ship.route_screenshot_url,
+            packageName: ship.package_name || '',
+            images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
             vehiclesCount: ship.vehicles_count,
             vehicleType: ship.vehicle_type,
             driverName: ship.driver_name,
-            driverImage: ship.driver_image_url,
             driverExperience: ship.driver_experience,
             stopped: ship.stopped,
             stopReason: ship.stop_reason,

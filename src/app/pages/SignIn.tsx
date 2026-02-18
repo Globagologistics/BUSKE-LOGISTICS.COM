@@ -84,6 +84,7 @@ export default function SignIn() {
       >
         {/* Logo */}
         {/* Updated logo image */}
+        {/* eslint-disable-next-line */}
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwdV07RyApr_mVZOJRk3Rht0P98deLiSYB0Q&s" alt="Buske Logistics logo" style={{maxWidth:'180px',margin:'0 auto',display:'block'}} />
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-3 mb-6">

@@ -13,7 +13,9 @@ export interface Checkpoint {
   shipment_id: string;
   location: string;
   checkpoint_order: number;
-  status: 'pending' | 'current' | 'completed';
+  status: 'pending' | 'current' | 'completed' | 'stopped';
+  // UI-only computed position (0-100)
+  positionPercent?: number;
   created_at: string;
   updated_at: string;
 }

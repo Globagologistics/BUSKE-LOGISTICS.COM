@@ -1,6 +1,6 @@
 import { Truck, Plane, Ship } from "lucide-react";
 import { motion } from "motion/react";
-import { Checkpoint } from "../types/database";
+import { Checkpoint } from "../../types/database";
 
 interface ShipmentProgressBarProps {
   progress: number; // 0-100
@@ -43,6 +43,7 @@ function LandProgressBar({ progress, checkpoints, status, vehiclesCount = 1 }: O
       <div className="relative w-full h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full shadow-md overflow-hidden border-2 border-gray-300">
         {/* Road markings (dashed lines) */}
         <div className="absolute inset-0 flex items-center">
+          {/* eslint-disable-next-line */}
           <div className="w-full h-1 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-300 absolute left-0"
             style={{
               backgroundImage: 'repeating-linear-gradient(90deg, #FBBF24 0px, #FBBF24 30px, transparent 30px, transparent 60px)',
@@ -62,20 +63,20 @@ function LandProgressBar({ progress, checkpoints, status, vehiclesCount = 1 }: O
           <motion.div
             key={idx}
             animate={{ left: `${progress}%` }}
-            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            transition={{ duration: status === 'Stopped' ? 0 : 0.5, ease: 'easeInOut' }}
             className="absolute -translate-x-1/2"
             style={{ top }}
           >
             <div className="relative">
               <motion.div
-                animate={{ y: [0, -4, 0] }}
-                transition={{ duration: 1, repeat: Infinity, repeatType: 'reverse', delay: idx * 0.1 }}
+                animate={status === 'Stopped' ? { y: 0 } : { y: [0, -4, 0] }}
+                transition={status === 'Stopped' ? undefined : { duration: 1, repeat: Infinity, repeatType: 'reverse', delay: idx * 0.1 }}
                 className="text-3xl drop-shadow-lg"
               >
-                🚗
+                <Truck className="w-8 h-8" />
               </motion.div>
               {/* Speed lines */}
-              {progress > 0 && progress < 100 && (
+              {progress > 0 && progress < 100 && status !== 'Stopped' && (
                 <>
                   <motion.div
                     animate={{ opacity: [0.3, 0.7, 0.3], x: [-8, 0] }}
@@ -98,6 +99,7 @@ function LandProgressBar({ progress, checkpoints, status, vehiclesCount = 1 }: O
         ))}
         {/* Checkpoint markers */}
         {(checkpoints || []).map((cp: Checkpoint, i: number) => (
+          // eslint-disable-next-line
           <div
             key={i}
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transform -translate-x-1/2 pointer-events-none"
@@ -151,16 +153,16 @@ function AirProgressBar({ progress, checkpoints, status }: Omit<ShipmentProgress
         {/* Moving plane icon */}
         <motion.div
           animate={{ left: `${progress}%` }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          transition={{ duration: status === 'Stopped' ? 0 : 0.5, ease: 'easeInOut' }}
           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
         >
           <div className="relative">
             <motion.div
-              animate={{ y: [0, -3, 0], rotate: [0, 2, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
+              animate={status === 'Stopped' ? { y: 0 } : { y: [0, -3, 0], rotate: [0, 2, 0] }}
+              transition={status === 'Stopped' ? undefined : { duration: 2, repeat: Infinity, repeatType: 'reverse' }}
               className="text-3xl drop-shadow-lg"
             >
-              ✈️
+              <Plane className="w-8 h-8" />
             </motion.div>
             {/* Contrails behind the plane */}
             {progress > 0 && progress < 100 && (
@@ -186,6 +188,7 @@ function AirProgressBar({ progress, checkpoints, status }: Omit<ShipmentProgress
 
         {/* Checkpoint markers */}
         {(checkpoints || []).map((cp: Checkpoint, i: number) => (
+          // eslint-disable-next-line
           <div
             key={i}
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transform -translate-x-1/2 pointer-events-none"
@@ -264,16 +267,16 @@ function SeaProgressBar({ progress, checkpoints, status }: Omit<ShipmentProgress
         {/* Moving ship icon */}
         <motion.div
           animate={{ left: `${progress}%` }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          transition={{ duration: status === 'Stopped' ? 0 : 0.5, ease: 'easeInOut' }}
           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10"
         >
           <div className="relative">
             <motion.div
-              animate={{ y: [0, -2, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatType: 'reverse' }}
+              animate={status === 'Stopped' ? { y: 0 } : { y: [0, -2, 0] }}
+              transition={status === 'Stopped' ? undefined : { duration: 1.5, repeat: Infinity, repeatType: 'reverse' }}
               className="text-3xl drop-shadow-lg"
             >
-              🚢
+              <Ship className="w-8 h-8" />
             </motion.div>
             {/* Water splashes */}
             {progress > 0 && progress < 100 && (
@@ -299,6 +302,7 @@ function SeaProgressBar({ progress, checkpoints, status }: Omit<ShipmentProgress
 
         {/* Checkpoint markers */}
         {(checkpoints || []).map((cp: Checkpoint, i: number) => (
+          // eslint-disable-next-line
           <div
             key={i}
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transform -translate-x-1/2 pointer-events-none z-5"

@@ -117,6 +117,7 @@ export default function AdminDetail() {
       await shipmentService.updateShipment(shipment.id, {
         stopped: true,
         stop_reason: stopReason.trim(),
+        stop_timestamp: new Date().toISOString(),
         status: 'stopped',
       });
       setShowStopModal(false);
@@ -134,6 +135,7 @@ export default function AdminDetail() {
       await shipmentService.updateShipment(shipment.id, {
         stopped: false,
         stop_reason: undefined,
+        stop_timestamp: undefined,
         paused: false,
         status: 'in_transit',
       } as any);

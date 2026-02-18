@@ -120,8 +120,21 @@ export default function TrackShipment() {
       // If paused, return current progress
       progress = calculateCountdownProgress(found.countdown_start_time, hours);
     } else if (found.stopped) {
-      // When stopped, freeze progress at current elapsed percentage
-      progress = calculateCountdownProgress(found.countdown_start_time, hours);
+      // When stopped, freeze progress at the moment it was stopped (use stop_timestamp if available)
+      try {
+        if (found.stop_timestamp) {
+          const stopTime = new Date(found.stop_timestamp).getTime();
+          const start = new Date(found.countdown_start_time).getTime();
+          const totalDurationMs = hours * 3600 * 1000;
+          const elapsed = Math.max(0, Math.min(totalDurationMs, stopTime - start));
+          progress = Math.round((elapsed / totalDurationMs) * 100) || 0;
+        } else {
+          // Fallback to current elapsed percentage if stop timestamp isn't present
+          progress = calculateCountdownProgress(found.countdown_start_time, hours);
+        }
+      } catch (e) {
+        progress = calculateCountdownProgress(found.countdown_start_time, hours);
+      }
     }
 
     setShipmentData({
