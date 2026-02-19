@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import {
   Package,
@@ -57,6 +57,7 @@ const formatCountdownTime = (startTime: string, durationHours: number): string =
 
 export default function TrackShipment() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [trackingId, setTrackingId] = useState(searchParams.get("id") || "");
   const [isTracking, setIsTracking] = useState(false);
   const [shipmentData, setShipmentData] = useState<any>(null);
@@ -815,12 +816,12 @@ export default function TrackShipment() {
               <p className="text-gray-700 mb-6">
                 This shipment or delivery has been terminated. Please contact the sender or our customer care service for more enquiry.
               </p>
-              <a
-                href="/"
+              <button
+                onClick={() => navigate('/')}
                 className="inline-block px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-300"
               >
                 ← Back to Home
-              </a>
+              </button>
             </motion.div>
           </div>
         )}
