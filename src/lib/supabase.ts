@@ -80,7 +80,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
         const makeId = () => {
           try {
             // prefer crypto.randomUUID when available
-            // @ts-ignore
+            // @ts-expect-error - Supabase query typing can be too strict for dynamic selects
             return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
           } catch (e) {
             return `dev-${Date.now()}-${Math.floor(Math.random() * 10000)}`;

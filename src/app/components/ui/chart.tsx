@@ -200,7 +200,6 @@ function ChartTooltipContent({
                     <itemConfig.icon />
                   ) : (
                     !hideIndicator && (
-                      // eslint-disable-next-line @stylistic/no-style-disabled-comment
                       <div
                         className={cn(
                           "shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
@@ -290,7 +289,6 @@ function ChartLegendContent({
             {itemConfig?.icon && !hideIcon ? (
               <itemConfig.icon />
             ) : (
-              // eslint-disable-next-line @stylistic/no-style-disabled-comment
               <div
                 className="h-2 w-2 shrink-0 rounded-[2px]"
                 style={{

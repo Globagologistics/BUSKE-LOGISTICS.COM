@@ -55,7 +55,7 @@ const toMessage = (row: ChatMessageRow): ChatMessage => ({
 
 const makeFileId = () => {
   try {
-    // @ts-ignore
+    // @ts-expect-error - Supabase channel typing for presence payloads is not strict
     return typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `chat_${Date.now()}_${Math.random().toString(16).slice(2)}`;

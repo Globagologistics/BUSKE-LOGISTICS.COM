@@ -652,7 +652,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     setIsAdmin(true);
     try {
       window.localStorage.setItem(ADMIN_UNLOCK_KEY, "true");
-    } catch {}
+    } catch (err) {
+      void err;
+    }
   }, []);
 
   const clearError = useCallback(() => {
