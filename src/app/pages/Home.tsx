@@ -29,7 +29,7 @@ export default function Home() {
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
     if (trackingId.trim()) {
-      navigate(`/track?id=${encodeURIComponent(trackingId)}`);
+      navigate(`/track/${encodeURIComponent(trackingId)}`);
     }
   };
 
@@ -111,11 +111,12 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0B1220] via-[#0F1F3D] to-[#1A365D]">
         {/* Hero background image */}
         <img
-          src="https://st4.depositphotos.com/2228340/28649/i/450/depositphotos_286497518-stock-photo-international-trade.jpg"
+          src="https://www.dhl.com/discover/adobe/dynamicmedia/deliver/dm-aid--43e883dc-6efc-4f88-9f34-480b59968105/inline-images-800x450-5.jpg?width=900&preferwebp=true&quality=82"
           alt="international trade background"
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
+          className="absolute inset-0 w-full h-full object-cover opacity-45"
         />
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.95)_0%,rgba(0,0,0,0.75)_45%,rgba(0,0,0,0.35)_75%,rgba(0,0,0,0)_95%)]" />
 
         {/* Gradient Orbs */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#2563EB] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />

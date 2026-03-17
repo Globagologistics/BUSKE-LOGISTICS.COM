@@ -2,23 +2,19 @@ import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useState, useContext, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type BeforeInstallPromptEvent = any;
-import { AdminContext } from "../contexts/AdminContext";
-
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { unlockAdmin } = useContext(AdminContext);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [logoClicks, setLogoClicks] = useState(0);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
 
   const navLinks = [
-    { name: "Home", path: "/" },
+    { name: "Learn More", path: "/home" },
     { name: "Track Shipment", path: "/track" },
     { name: "Locations", path: "/locations" },
     { name: "Solutions", path: "/solutions" },
@@ -40,32 +36,16 @@ export function Navbar() {
     return () => window.removeEventListener('beforeinstallprompt', handler as EventListener);
   }, []);
 
-  // Handle admin unlock on 5 clicks
-  useEffect(() => {
-    if (logoClicks === 5) {
-      unlockAdmin();
-      navigate('/admin');
-      setLogoClicks(0);
-    }
-  }, [logoClicks, unlockAdmin, navigate]);
-
-  const handleLogoClick = () => {
-    setLogoClicks((c) => c + 1);
-  };
-
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto pl-[calc(env(safe-area-inset-left,0px)+1rem)] pr-[calc(env(safe-area-inset-right,0px)+1rem)] sm:pl-[calc(env(safe-area-inset-left,0px)+1.5rem)] sm:pr-[calc(env(safe-area-inset-right,0px)+1.5rem)] lg:pl-[calc(env(safe-area-inset-left,0px)+2rem)] lg:pr-[calc(env(safe-area-inset-right,0px)+2rem)]">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div
-            onClick={handleLogoClick}
-            className="cursor-pointer flex items-center gap-3 group"
-          >
+          <Link to="/" className="cursor-pointer flex items-center gap-3 group">
             <img
               src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwdV07RyApr_mVZOJRk3Rht0P98deLiSYB0Q&s"
               alt="Buske Logistics logo"
@@ -79,7 +59,7 @@ export function Navbar() {
                 Your Trusted Global Logistics Partner
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
@@ -156,7 +136,7 @@ export function Navbar() {
           exit={{ opacity: 0, height: 0 }}
           className="md:hidden border-t border-gray-200 bg-white"
         >
-          <div className="px-4 py-6 space-y-4">
+          <div className="px-5 py-6 space-y-4 pl-[calc(env(safe-area-inset-left,0px)+1rem)] pr-[calc(env(safe-area-inset-right,0px)+1rem)]">
             {navLinks.map((link) => (
               <Link
                 key={link.path}

@@ -1,20 +1,23 @@
 {
   "name": "Buske Logistics",
   "short_name": "Buske",
-  "start_url": ".",
+  "description": "Fast, reliable shipping with real-time tracking.",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563EB",
   "icons": [
     {
-      "src": "android-chrome-192x192.png",
+      "src": "/buske-logo.jpeg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg",
+      "purpose": "any"
     },
     {
-      "src": "android-chrome-512x512.png",
+      "src": "/buske-logo.jpeg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg",
+      "purpose": "any"
     }
   ]
 }

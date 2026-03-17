@@ -1,9 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Copy, Check, Plus, Search, Filter, Eye, Edit2, Trash2, Truck, Package, AlertCircle } from 'lucide-react';
+import { Copy, Check, Plus, Search, Filter, Eye, Edit2, Trash2, Truck, Package, AlertCircle, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AdminContext } from '../contexts/AdminContext';
-import { calculateProgressPercentage } from '../utils/trackingUtils';
 
 export default function Admin() {
   const { shipments, deleteShipment, loading } = useContext(AdminContext);
@@ -50,15 +49,40 @@ export default function Admin() {
   };
 
   const getStatusColor = (shipment: any) => {
+    if (shipment.terminated) return { bg: 'bg-red-50', text: 'text-red-700', badge: 'bg-red-100 text-red-800' };
     if (shipment.stopped) return { bg: 'bg-red-50', text: 'text-red-700', badge: 'bg-red-100 text-red-800' };
     if (shipment.paused) return { bg: 'bg-yellow-50', text: 'text-yellow-700', badge: 'bg-yellow-100 text-yellow-800' };
     return { bg: 'bg-green-50', text: 'text-green-700', badge: 'bg-green-100 text-green-800' };
   };
 
   const getStatusLabel = (shipment: any) => {
+    if (shipment.terminated) return 'Terminated';
     if (shipment.stopped) return 'Stopped';
     if (shipment.paused) return 'Paused';
     return 'Active';
+  };
+
+  const getShipmentProgress = (shipment: any) => {
+    if (!shipment?.countdownStartTime || !shipment?.countdownDuration) return 0;
+    const startMs = new Date(shipment.countdownStartTime).getTime();
+    const totalMs = (shipment.countdownDuration || 0) * 3600 * 1000;
+    if (!Number.isFinite(totalMs) || totalMs <= 0) return 0;
+
+    const freezeAt =
+      shipment.terminated
+        ? shipment.terminateTimestamp
+        : shipment.stopped
+        ? shipment.stopTimestamp
+        : shipment.paused
+        ? shipment.pauseTimestamp
+        : null;
+
+    const asOfMs = freezeAt ? new Date(freezeAt).getTime() : now;
+    if (!Number.isFinite(asOfMs)) return 0;
+    const elapsed = asOfMs - startMs;
+    if (elapsed <= 0) return 0;
+    if (elapsed >= totalMs) return 100;
+    return Math.round((elapsed / totalMs) * 100);
   };
 
   return (
@@ -71,15 +95,26 @@ export default function Admin() {
             <h1 className="text-4xl font-bold text-[#0F1F3D]">Admin Dashboard</h1>
             <p className="text-gray-600 mt-2">Manage and track all shipments</p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/admin/new')}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#2563EB] to-[#38BDF8] text-white rounded-lg font-semibold hover:shadow-lg transition-all"
-          >
-            <Plus className="w-5 h-5" />
-            New Shipment
-          </motion.button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 px-5 py-3 rounded-lg border border-gray-300 bg-white text-[#0F1F3D] font-semibold hover:shadow-sm transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/admin/new')}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#2563EB] to-[#38BDF8] text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+            >
+              <Plus className="w-5 h-5" />
+              New Shipment
+            </motion.button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -169,12 +204,7 @@ export default function Admin() {
           ) : (
             filteredShipments.map((s, idx) => {
               const statusColor = getStatusColor(s);
-              const progress = s.countdownStartTime && s.countdownDuration 
-                ? calculateProgressPercentage(
-                    s.countdownStartTime,
-                    new Date(new Date(s.countdownStartTime).getTime() + (s.countdownDuration || 0) * 1000).toISOString()
-                  )
-                : 0;
+              const progress = getShipmentProgress(s);
 
               return (
                 <motion.div

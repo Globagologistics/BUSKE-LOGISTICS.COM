@@ -8,7 +8,7 @@ This repository contains the front‑end of the Buske Logistics site designed us
 * Mobile‑first responsive layout
 * Tailwind CSS utility classes with custom animations
 * Routing using `react-router` (v7)
-* Build and deploy scripts for GitHub Pages
+* Netlify-ready build configuration
 * ESLint/Prettier configuration for consistent code style
 * GitHub Actions CI workflow for linting and building
 
@@ -34,13 +34,11 @@ npm run format
 ```
 
 ### Deploying
-This project is configured to deploy to GitHub Pages. Update `vite.config.ts`'s `base` field to your repository name, then run:
+This project is configured to deploy to Netlify. Build the project, then deploy the `dist` folder (or connect the repo in Netlify and let it build).
 
 ```bash
-npm run deploy
+npm run build
 ```
-
-You can also configure other providers by uploading the contents of the `dist` directory.
 
   This is a code bundle for the Buske Logistics website. The original project is available at https://www.figma.com/design/H0QZC7IttP9eKJYvPdYEbO/Redesign-Buske-Logistics-Website if you need the Figma source.
 

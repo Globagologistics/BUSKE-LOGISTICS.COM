@@ -38,10 +38,14 @@ export interface Shipment {
   countdownDuration?: number;
   countdownStartTime?: string;
   pauseTimestamp?: string;
+  terminated?: boolean;
+  terminateTimestamp?: string;
   routeScreenshot?: File | FileList;
   admin_id?: string;
   status?: string;
 }
+
+const ADMIN_UNLOCK_KEY = "admin-unlocked";
 
 interface AdminContextType {
   shipments: Shipment[];
@@ -73,7 +77,10 @@ export const AdminContext = createContext<AdminContextType>({
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(ADMIN_UNLOCK_KEY) === "true";
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adminId, setAdminId] = useState<string>('');
@@ -99,7 +106,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           console.warn('⚠️ No authenticated user found. Using demo mode with default admin (00000000-0000-0000-0000-000000000000).');
           // Use default admin ID from SQL schema for testing - replace with real auth in production
           setAdminId('00000000-0000-0000-0000-000000000000');
-          setIsAdmin(false);
           return;
         }
         console.log('✅ Authenticated user found:', user.id);
@@ -173,10 +179,13 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             driverExperience: ship.driver_experience,
             stopped: ship.stopped,
             stopReason: ship.stop_reason,
+            stopTimestamp: ship.stop_timestamp,
             paused: ship.paused,
             countdownDuration: ship.countdown_duration ? ship.countdown_duration / 3600 : 0,
             countdownStartTime: ship.countdown_start_time,
             pauseTimestamp: ship.pause_timestamp,
+            terminated: ship.terminated,
+            terminateTimestamp: ship.terminate_timestamp,
             admin_id: ship.admin_id,
             status: ship.status,
             checkpoints: (ship.checkpoints || []) as Checkpoint[],
@@ -336,6 +345,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             driverExperience: ship.driver_experience,
             stopped: ship.stopped,
             stopReason: ship.stop_reason,
+            stopTimestamp: ship.stop_timestamp,
+            terminated: ship.terminated,
+            terminateTimestamp: ship.terminate_timestamp,
             paused: ship.paused,
             countdownDuration: ship.countdown_duration ? ship.countdown_duration / 3600 : 0,
             countdownStartTime: ship.countdown_start_time,
@@ -413,6 +425,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             driverExperience: ship.driver_experience,
             stopped: ship.stopped,
             stopReason: ship.stop_reason,
+            stopTimestamp: ship.stop_timestamp,
+            terminated: ship.terminated,
+            terminateTimestamp: ship.terminate_timestamp,
             paused: ship.paused,
             countdownDuration: ship.countdown_duration ? ship.countdown_duration / 3600 : 0,
             countdownStartTime: ship.countdown_start_time,
@@ -470,6 +485,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             driverExperience: ship.driver_experience,
             stopped: ship.stopped,
             stopReason: ship.stop_reason,
+            stopTimestamp: ship.stop_timestamp,
+            terminated: ship.terminated,
+            terminateTimestamp: ship.terminate_timestamp,
             paused: ship.paused,
             countdownDuration: ship.countdown_duration ? ship.countdown_duration / 3600 : 0,
             countdownStartTime: ship.countdown_start_time,
@@ -553,6 +571,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             driverExperience: ship.driver_experience,
             stopped: ship.stopped,
             stopReason: ship.stop_reason,
+            stopTimestamp: ship.stop_timestamp,
+            terminated: ship.terminated,
+            terminateTimestamp: ship.terminate_timestamp,
             paused: ship.paused,
             countdownDuration: ship.countdown_duration ? ship.countdown_duration / 3600 : 0,
             countdownStartTime: ship.countdown_start_time,
@@ -604,6 +625,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             driverExperience: ship.driver_experience,
             stopped: ship.stopped,
             stopReason: ship.stop_reason,
+            stopTimestamp: ship.stop_timestamp,
+            terminated: ship.terminated,
+            terminateTimestamp: ship.terminate_timestamp,
             paused: ship.paused,
             countdownDuration: ship.countdown_duration ? ship.countdown_duration / 3600 : 0,
             countdownStartTime: ship.countdown_start_time,
@@ -626,6 +650,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 
   const unlockAdmin = useCallback(() => {
     setIsAdmin(true);
+    try {
+      window.localStorage.setItem(ADMIN_UNLOCK_KEY, "true");
+    } catch {}
   }, []);
 
   const clearError = useCallback(() => {

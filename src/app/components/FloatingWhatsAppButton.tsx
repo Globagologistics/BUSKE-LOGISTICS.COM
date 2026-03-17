@@ -1,31 +1,31 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { MessageCircle } from 'lucide-react';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export function FloatingWhatsAppButton() {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Hide on admin dashboard pages
-  if (location.pathname.startsWith('/admin')) {
+  // Hide on admin dashboard pages and chat view
+  if (location.pathname.startsWith('/admin') || location.pathname === '/chat') {
     return null;
   }
 
   return (
-    <motion.a
-      href="https://wa.me/13364596552?text=Hello%20I%20need%20assistance%20with%20my%20shipment"
-      target="_blank"
-      rel="noopener noreferrer"
+    <motion.button
+      type="button"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 0.5, type: 'spring' }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
-      className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-2xl hover:shadow-green-500/50 transition-all duration-300"
-      aria-label="Contact customer service on WhatsApp"
+      onClick={() => navigate('/chat')}
+      className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] rounded-full flex items-center justify-center shadow-2xl hover:shadow-blue-500/40 transition-all duration-300"
+      aria-label="Open live support chat"
     >
-      <div className="absolute inset-0 rounded-full bg-green-500 opacity-0 animate-pulse" />
+      <div className="absolute inset-0 rounded-full bg-blue-500 opacity-0 animate-pulse" />
       <MessageCircle className="w-7 h-7 text-white relative z-10" />
-    </motion.a>
+    </motion.button>
   );
 }

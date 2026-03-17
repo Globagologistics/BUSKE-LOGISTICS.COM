@@ -46,7 +46,15 @@ export default function AdminDetail() {
     const computePercent = () => {
       if (shipment.countdown_duration && shipment.countdown_start_time) {
         const start = new Date(shipment.countdown_start_time).getTime();
-        const nowMs = Date.now();
+        const freezeAt =
+          shipment.terminated
+            ? shipment.terminate_timestamp
+            : shipment.stopped
+            ? shipment.stop_timestamp
+            : shipment.paused
+            ? shipment.pause_timestamp
+            : null;
+        const nowMs = freezeAt ? new Date(freezeAt).getTime() : Date.now();
         const totalMs = (shipment.countdown_duration || 0) * 1000;
         if (totalMs <= 0) return 0;
         const elapsed = nowMs - start;
@@ -71,6 +79,7 @@ export default function AdminDetail() {
   }, []);
 
   const handleSliderChange = (value: number) => {
+    if (!shipment || shipment.paused || shipment.stopped || shipment.terminated) return;
     setSliderValue(value);
     if (!shipment) return;
     if (sliderTimer.current) window.clearTimeout(sliderTimer.current);
@@ -228,6 +237,9 @@ export default function AdminDetail() {
       await shipmentService.updateShipment(shipment.id, {
         terminated: true,
         terminate_timestamp: new Date().toISOString(),
+        stopped: true,
+        stop_timestamp: new Date().toISOString(),
+        paused: false,
         status: 'stopped',
       });
       setShowTerminateModal(false);
@@ -244,6 +256,9 @@ export default function AdminDetail() {
       await shipmentService.updateShipment(shipment.id, {
         terminated: false,
         terminate_timestamp: null,
+        stopped: false,
+        stop_timestamp: null,
+        stop_reason: null,
         status: 'in_transit',
       } as any);
     } catch (error) {
@@ -278,7 +293,15 @@ export default function AdminDetail() {
     if (!s) return 0;
     if (s.countdown_duration && s.countdown_start_time) {
       const start = new Date(s.countdown_start_time).getTime();
-      const nowMs = Date.now();
+      const freezeAt =
+        s.terminated
+          ? s.terminate_timestamp
+          : s.stopped
+          ? s.stop_timestamp
+          : s.paused
+          ? s.pause_timestamp
+          : null;
+      const nowMs = freezeAt ? new Date(freezeAt).getTime() : Date.now();
       const totalMs = (s.countdown_duration || 0) * 1000;
       if (totalMs <= 0) return 0;
       const elapsed = nowMs - start;
@@ -293,8 +316,12 @@ export default function AdminDetail() {
     return 0;
   };
 
+  const sliderDisabled = isSaving || shipment.paused || shipment.stopped || shipment.terminated;
+  const isFrozen = shipment.paused || shipment.stopped || shipment.terminated;
+
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto py-12 px-4">
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/admin')} className="text-sm text-gray-600 hover:text-gray-800">← Back</button>
@@ -352,7 +379,22 @@ export default function AdminDetail() {
 
           <div className="bg-white rounded-2xl p-6 shadow border border-gray-100">
             <h3 className="text-lg font-semibold mb-4">Progress</h3>
-            <ShipmentProgressBar progress={getCurrentPercent(shipment)} transportMode={shipment.transportation} checkpoints={shipment.checkpoints} status={shipment.stopped ? 'Stopped' : shipment.paused ? 'Paused' : 'In Transit'} vehiclesCount={shipment.vehicles_count} isVisuallyPaused={shipment.progress_bar_paused || false} />
+            <ShipmentProgressBar
+              progress={getCurrentPercent(shipment)}
+              transportMode={shipment.transportation}
+              checkpoints={shipment.checkpoints}
+              status={
+                shipment.terminated
+                  ? 'Stopped'
+                  : shipment.stopped
+                  ? 'Stopped'
+                  : shipment.paused
+                  ? 'Paused'
+                  : 'In Transit'
+              }
+              vehiclesCount={shipment.vehicles_count}
+              isVisuallyPaused={shipment.progress_bar_paused || false}
+            />
             {shipment.checkpoints && (
               <div className="mt-4">
                 <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
@@ -360,7 +402,18 @@ export default function AdminDetail() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {shipment.checkpoints.map((c: any, idx: number) => (
-                    <button key={c.id} onClick={() => handleProgressClick(idx)} className={`px-3 py-1 rounded ${idx <= (shipment.current_checkpoint_index || 0) ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}>{c.location}</button>
+                    <button
+                      key={c.id}
+                      onClick={() => handleProgressClick(idx)}
+                      disabled={isFrozen || isSaving}
+                      className={`px-3 py-1 rounded transition ${
+                        idx <= (shipment.current_checkpoint_index || 0)
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700'
+                      } ${isFrozen || isSaving ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-600 hover:text-white'}`}
+                    >
+                      {c.location}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -410,9 +463,24 @@ export default function AdminDetail() {
 
           {shipment.countdown_duration && (
             <div className="bg-white rounded-2xl p-4 shadow border border-gray-100">
-              <h4 className="text-sm font-semibold mb-3">Adjust Live Progress</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold">Adjust Live Progress</h4>
+                {isFrozen && (
+                  <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red-700">
+                    Frozen
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3 mb-4">
-                <input type="range" min={0} max={100} value={sliderValue} onChange={e => handleSliderChange(Number(e.target.value))} disabled={isSaving || shipment.stopped} className="flex-1" />
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={sliderValue}
+                  onChange={e => handleSliderChange(Number(e.target.value))}
+                  disabled={sliderDisabled}
+                  className="flex-1 disabled:opacity-60"
+                />
                 <div className="w-12 text-right font-semibold">{sliderValue}%</div>
               </div>
               <div className="flex items-center justify-center gap-2">
@@ -478,6 +546,7 @@ export default function AdminDetail() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

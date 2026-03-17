@@ -1,16 +1,19 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type BeforeInstallPromptEvent = any;
-import { Mail, Phone, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
+import { Mail, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 import { AdminContext } from "../contexts/AdminContext";
 
 export function Footer() {
   const { unlockAdmin } = useContext(AdminContext);
+  const navigate = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
+  const [copyrightClicks, setCopyrightClicks] = useState(0);
+  const logoSrc = `${import.meta.env.BASE_URL}buske-logo.jpeg`;
 
   useEffect(() => {
     const handler = (e: BeforeInstallPromptEvent) => {
@@ -26,7 +29,19 @@ export function Footer() {
       setShowInstall(true);
     }
     return () => window.removeEventListener('beforeinstallprompt', handler as EventListener);
-  }, [unlockAdmin]);
+  }, []);
+
+  useEffect(() => {
+    if (copyrightClicks === 5) {
+      unlockAdmin();
+      navigate("/admin");
+      setCopyrightClicks(0);
+    }
+  }, [copyrightClicks, navigate, unlockAdmin]);
+
+  const handleCopyrightClick = () => {
+    setCopyrightClicks((c) => c + 1);
+  };
 
   const solutions = [
     'Warehousing',
@@ -48,7 +63,17 @@ export function Footer() {
     'Industries Served',
   ];
 
+  const handleInstallClick = async () => {
+    const evt = deferredPrompt || (window as any).deferredPWAInstallPrompt;
+    if (!evt) return;
+    evt.prompt();
+    await evt.userChoice;
+    setShowInstall(false);
+    try { delete (window as any).deferredPWAInstallPrompt; } catch {}
+  };
+
   return (
+    <>
     <footer className="bg-gradient-to-b from-[#0B1220] to-[#0F1F3D] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
@@ -121,17 +146,13 @@ export function Footer() {
                   buskelogistics141@gmail.com
                 </span>
               </li>
-              <li className="flex items-start gap-2">
-                <Phone className="w-4 h-4 text-[#38BDF8] mt-0.5 flex-shrink-0" />
-                <a href="tel:+13364596552" className="text-gray-500 hover:text-white text-xs transition-colors">+1(336)4596552</a>
-              </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm cursor-pointer select-none" onClick={handleCopyrightClick}>
               © {new Date().getFullYear()} Buske Logistics. All rights reserved.
             </p>
             <div className="flex gap-6">
@@ -144,21 +165,47 @@ export function Footer() {
               <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Cookie Policy
               </a>
-              {showInstall && (
-                <button onClick={async () => {
-                  const evt = deferredPrompt || (window as any).deferredPWAInstallPrompt;
-                  if (!evt) return;
-                  evt.prompt();
-                  await evt.userChoice;
-                  setShowInstall(false);
-                  try { delete (window as any).deferredPWAInstallPrompt; } catch {}
-                }} className="text-gray-200 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded text-xs transition-colors">Install App</button>
-              )}
             </div>
           </div>
         </div>
       </div>
     </footer>
+
+    {showInstall && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0B1220] p-6 shadow-2xl">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+              <img src={logoSrc} alt="Buske Logistics" className="h-full w-full object-cover" />
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-white">Install Buske Logistics</div>
+              <div className="text-xs text-white/60">Get the full-screen tracking experience</div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+            Install the app for faster access, push-style updates, and a distraction-free tracking view.
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              onClick={handleInstallClick}
+              className="w-full rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-95"
+            >
+              Install App
+            </button>
+            <button
+              onClick={() => setShowInstall(false)}
+              className="w-full rounded-full border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+            >
+              Not Now
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
  

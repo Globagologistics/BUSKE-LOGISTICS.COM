@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ command, mode }) => {
   const isProd = mode === 'production';
   return {
-    base: isProd ? '/BUSKE-LOGISTICS.COM/' : '/',
+    base: '/',
     plugins: [
       // The React and Tailwind plugins are both required for Make, even if
       // Tailwind is not being actively used – do not remove them
@@ -16,7 +16,11 @@ export default defineConfig(({ command, mode }) => {
       // Only enable PWA plugin in production to avoid dev server conflicts
       isProd && VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon-192.svg', 'icon-512.svg'],
+        includeAssets: [
+          'favicon.ico',
+          'apple-touch-icon.png',
+          'buske-logo.jpeg',
+        ],
         manifest: {
           name: 'Buske Logistics',
           short_name: 'Buske',
@@ -24,19 +28,19 @@ export default defineConfig(({ command, mode }) => {
           theme_color: '#2563EB',
           background_color: '#ffffff',
           display: 'standalone',
-          start_url: '/BUSKE-LOGISTICS.COM/',
+          start_url: '/',
           icons: [
             {
-              src: '/BUSKE-LOGISTICS.COM/icon-192.svg',
+              src: '/buske-logo.jpeg',
               sizes: '192x192',
-              type: 'image/svg+xml',
-              purpose: 'any maskable'
+              type: 'image/jpeg',
+              purpose: 'any'
             },
             {
-              src: '/BUSKE-LOGISTICS.COM/icon-512.svg',
+              src: '/buske-logo.jpeg',
               sizes: '512x512',
-              type: 'image/svg+xml',
-              purpose: 'any maskable'
+              type: 'image/jpeg',
+              purpose: 'any'
             }
           ]
         },

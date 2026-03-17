@@ -1,7 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 import Root from "./pages/Root";
 import Home from "./pages/Home";
+import Onboarding from "./pages/Onboarding";
+import TrackShipmentSearch from "./pages/TrackShipmentSearch";
 import TrackShipment from "./pages/TrackShipment";
+import UserChat from "./pages/UserChat";
 import About from "./pages/About";
 import Locations from "./pages/Locations";
 import Solutions from "./pages/Solutions";
@@ -12,14 +15,22 @@ import { AdminRouteGuard } from "./pages/AdminRouteGuard";
 import Admin from "./pages/Admin";
 import AdminForm from "./pages/AdminForm";
 import AdminDetail from "./pages/AdminDetail";
+import AdminChat from "./pages/AdminChat";
+import AdminLayout from "./pages/AdminLayout";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Root,
     children: [
-      { index: true, Component: Home },
-      { path: "track", Component: TrackShipment },
+      { index: true, Component: Onboarding },
+      { path: "home", Component: Home },
+      { path: "learn-more", Component: Home },
+      { path: "track", Component: TrackShipmentSearch },
+      { path: "track-shipment", Component: TrackShipmentSearch },
+      { path: "track/:id", Component: TrackShipment },
+      { path: "track-shipment/:id", Component: TrackShipment },
+      { path: "chat", Component: UserChat },
       { path: "locations", Component: Locations },
       { path: "solutions", Component: Solutions },
       { path: "about", Component: About },
@@ -29,16 +40,22 @@ export const router = createBrowserRouter([
         path: "admin",
         Component: AdminRouteGuard,
         children: [
-          { index: true, Component: Admin },
-          { path: "new", Component: AdminForm },
-          { path: "edit/:id", Component: AdminForm },
-          { path: "view/:id", Component: AdminDetail },
+          {
+            Component: AdminLayout,
+            children: [
+              { index: true, Component: Admin },
+              { path: "chat", Component: AdminChat },
+              { path: "new", Component: AdminForm },
+              { path: "edit/:id", Component: AdminForm },
+              { path: "view/:id", Component: AdminDetail },
+            ],
+          },
         ],
       },
       { path: "*", Component: Home },
     ],
   },
 ], {
-  // Use Vite-provided base URL so router works on GitHub Pages and locally
+  // Use Vite-provided base URL so router works on Netlify and locally
   basename: import.meta.env.BASE_URL || '/',
 });
