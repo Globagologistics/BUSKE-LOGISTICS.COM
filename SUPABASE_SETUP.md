@@ -85,7 +85,7 @@ Storage buckets:
 
 When deploying to Netlify, add these environment variables in Site settings:
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_ANON_KEY` (preferred) or `VITE_SUPABASE_PUBLISHABLE_KEY`
 
 ---
 

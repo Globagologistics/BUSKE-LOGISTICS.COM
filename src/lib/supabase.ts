@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 let supabase: any;
 
@@ -151,6 +153,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
       },
     };
 } else {
+  if (!import.meta.env.VITE_SUPABASE_ANON_KEY && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+    console.warn('âš ï¸ Using VITE_SUPABASE_PUBLISHABLE_KEY. Consider renaming to VITE_SUPABASE_ANON_KEY for clarity.');
+  }
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 

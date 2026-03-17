@@ -230,6 +230,19 @@ export default function AdminForm() {
   };
 
   const transportIsLand = formData.transportation === 'Land Transport';
+  const transportMeta = (() => {
+    const value = String(formData.transportation || '').toLowerCase();
+    if (value.includes('air')) {
+      return { label: 'Pilot', emoji: '✈️', title: 'Aircraft & Pilot Details' };
+    }
+    if (value.includes('ocean') || value.includes('sea')) {
+      return { label: 'Captain', emoji: '🚢', title: 'Vessel & Captain Details' };
+    }
+    if (value.includes('door')) {
+      return { label: 'Dispatch Rider', emoji: '🛵', title: 'Dispatch Rider Details' };
+    }
+    return { label: 'Operator', emoji: '🧭', title: 'Operator Details' };
+  })();
 
   if (submittedTrackingId) {
     return (
@@ -598,6 +611,43 @@ export default function AdminForm() {
                         id="driverExperience"
                         name="driverExperience"
                         placeholder="e.g., 5"
+                        value={formData.driverExperience}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Pilot / Captain / Dispatch Rider Information (non-land transport) */}
+              {!transportIsLand && (
+                <div>
+                  <h3 className="text-lg font-semibold text-[#0F1F3D] mb-4 flex items-center gap-2">
+                    <span className="text-2xl">{transportMeta.emoji}</span> {transportMeta.title}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="driverName" className="block text-sm font-semibold text-gray-700 mb-2">
+                        {transportMeta.label} Name
+                      </label>
+                      <input
+                        id="driverName"
+                        name="driverName"
+                        placeholder={`Full ${transportMeta.label.toLowerCase()} name`}
+                        value={formData.driverName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="driverExperience" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Years of Experience
+                      </label>
+                      <input
+                        id="driverExperience"
+                        name="driverExperience"
+                        placeholder="e.g., 8"
                         value={formData.driverExperience}
                         onChange={handleChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
