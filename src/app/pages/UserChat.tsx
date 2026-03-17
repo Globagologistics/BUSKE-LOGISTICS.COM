@@ -26,6 +26,20 @@ export default function UserChat() {
   const { shipment, loading, error } = useShipmentWithCheckpoints(submittedId || "");
 
   useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyHeight = document.body.style.height;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.style.height = "100%";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.height = prevBodyHeight;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!submittedId) return;
     if (loading) return;
 
@@ -119,7 +133,7 @@ export default function UserChat() {
   };
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-[#0B1220] text-white">
+    <div className="relative min-h-screen h-[100svh] w-full overflow-hidden bg-[#0B1220] text-white">
       <div className="absolute inset-0 bg-[url('https://w0.peakpx.com/wallpaper/818/148/HD-wallpaper-whatsapp-background-cool-dark-green-new-theme-whatsapp.jpg')] bg-cover bg-center opacity-60" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(3,7,18,0.98)_0%,rgba(3,7,18,0.9)_45%,rgba(3,7,18,0.5)_70%,rgba(3,7,18,0)_90%)]" />
 

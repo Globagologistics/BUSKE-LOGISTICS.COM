@@ -96,3 +96,10 @@ html {
   outline: 2px solid #2563EB;
   outline-offset: 2px;
 }
+
+/* iOS scroll stability for chat threads */
+.ios-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}

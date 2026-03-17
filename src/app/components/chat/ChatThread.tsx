@@ -193,7 +193,7 @@ export function ChatThread({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="ios-scroll flex-1 overflow-y-auto overscroll-contain px-6 py-6">
         <div className="space-y-4">
           {loading && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
