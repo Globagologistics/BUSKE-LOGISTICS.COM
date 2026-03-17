@@ -65,6 +65,29 @@ export default function AdminForm() {
     if (editing) setFormData(initialData);
   }, [editing]);
 
+  const transportIsLand = formData.transportation === 'Land Transport';
+  const transportMeta = (() => {
+    const value = String(formData.transportation || '').toLowerCase();
+    if (value.includes('air')) {
+      return { label: 'Pilot', emoji: '✈️', title: 'Aircraft & Pilot Details', vehicleLabel: 'Aircraft Type' };
+    }
+    if (value.includes('ocean') || value.includes('sea')) {
+      return { label: 'Captain', emoji: '🚢', title: 'Vessel & Captain Details', vehicleLabel: 'Vessel Type' };
+    }
+    if (value.includes('door')) {
+      return { label: 'Dispatch Rider', emoji: '🛵', title: 'Dispatch Rider Details', vehicleLabel: 'Rider Vehicle Type' };
+    }
+    return { label: 'Driver', emoji: '🚚', title: 'Vehicle & Driver Information', vehicleLabel: 'Truck Type' };
+  })();
+
+  const vehiclePlaceholder = (() => {
+    const value = String(formData.transportation || '').toLowerCase();
+    if (value.includes('air')) return 'e.g., Cargo Plane, Jet, Boeing 747';
+    if (value.includes('ocean') || value.includes('sea')) return 'e.g., Container Ship, Cargo Vessel';
+    if (value.includes('door')) return 'e.g., Dispatch Bike, Delivery Van';
+    return 'e.g., Truck, Trailer, Courier Van';
+  })();
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -112,6 +135,14 @@ export default function AdminForm() {
     }
     
     console.log('✓ All required fields valid');
+
+    const vehicleTypeValue = formData.vehicleType?.toString().trim();
+    if (!vehicleTypeValue) {
+      const errorMsg = `${transportMeta.vehicleLabel} is required`;
+      setValidationError(errorMsg);
+      setIsSubmitting(false);
+      return;
+    }
     
     // Collect non-empty checkpoints from the 12 fields
     const checkpointLocations = [];
@@ -228,21 +259,6 @@ export default function AdminForm() {
       setTimeout(() => setCopiedToClipboard(false), 2000);
     }
   };
-
-  const transportIsLand = formData.transportation === 'Land Transport';
-  const transportMeta = (() => {
-    const value = String(formData.transportation || '').toLowerCase();
-    if (value.includes('air')) {
-      return { label: 'Pilot', emoji: '✈️', title: 'Aircraft & Pilot Details' };
-    }
-    if (value.includes('ocean') || value.includes('sea')) {
-      return { label: 'Captain', emoji: '🚢', title: 'Vessel & Captain Details' };
-    }
-    if (value.includes('door')) {
-      return { label: 'Dispatch Rider', emoji: '🛵', title: 'Dispatch Rider Details' };
-    }
-    return { label: 'Operator', emoji: '🧭', title: 'Operator Details' };
-  })();
 
   if (submittedTrackingId) {
     return (
@@ -560,7 +576,7 @@ export default function AdminForm() {
               {transportIsLand && (
                 <div>
                   <h3 className="text-lg font-semibold text-[#0F1F3D] mb-4 flex items-center gap-2">
-                    <span className="text-2xl">🚚</span> Vehicle & Driver Information
+                    <span className="text-2xl">{transportMeta.emoji}</span> {transportMeta.title}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -579,14 +595,15 @@ export default function AdminForm() {
                     </div>
                     <div>
                       <label htmlFor="vehicleType" className="block text-sm font-semibold text-gray-700 mb-2">
-                        Vehicle Type
+                        {transportMeta.vehicleLabel} <span className="text-red-500">*</span>
                       </label>
                       <input
                         id="vehicleType"
                         name="vehicleType"
-                        placeholder="e.g., Truck, Van, Courier Bike"
+                        placeholder={vehiclePlaceholder}
                         value={formData.vehicleType}
                         onChange={handleChange}
+                        required
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
                       />
                     </div>
@@ -627,6 +644,20 @@ export default function AdminForm() {
                     <span className="text-2xl">{transportMeta.emoji}</span> {transportMeta.title}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="vehicleType" className="block text-sm font-semibold text-gray-700 mb-2">
+                        {transportMeta.vehicleLabel} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="vehicleType"
+                        name="vehicleType"
+                        placeholder={vehiclePlaceholder}
+                        value={formData.vehicleType}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
+                      />
+                    </div>
                     <div>
                       <label htmlFor="driverName" className="block text-sm font-semibold text-gray-700 mb-2">
                         {transportMeta.label} Name

@@ -1,14 +1,15 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BeforeInstallPromptEvent = any;
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 export function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
@@ -92,7 +93,7 @@ export function Navbar() {
                 onClick={async () => {
                   if (!deferredPrompt) return;
                   deferredPrompt.prompt();
-                  const choice = await deferredPrompt.userChoice;
+                  await deferredPrompt.userChoice;
                   setShowInstall(false);
                 }}
                 className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200"

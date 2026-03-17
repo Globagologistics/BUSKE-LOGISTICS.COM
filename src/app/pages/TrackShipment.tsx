@@ -71,7 +71,7 @@ export default function TrackShipment() {
   } | null>(null);
 
   // Fetch shipment from Supabase with real-time updates
-  const { shipment, loading } = useShipmentWithCheckpoints(trackingId || '');
+  const { shipment, loading, error } = useShipmentWithCheckpoints(trackingId || '');
 
   useEffect(() => {
     if (!shipmentData) return;
@@ -287,6 +287,28 @@ export default function TrackShipment() {
             className="inline-block px-6 py-3 bg-[#2563EB] text-white font-semibold rounded-lg hover:bg-[#1D4ED8] transition-all duration-300"
           >
             Go to Tracking Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && !shipment) {
+    return (
+      <div className="min-h-screen bg-white py-20">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <h1 className="text-3xl font-bold text-[#0F1F3D] mb-4">
+            Shipment Not Found
+          </h1>
+          <p className="text-gray-600 mb-8">
+            {error || "We couldn't find a shipment with that tracking ID. Please check the ID and try again."}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/track")}
+            className="inline-block px-6 py-3 bg-[#2563EB] text-white font-semibold rounded-lg hover:bg-[#1D4ED8] transition-all duration-300"
+          >
+            Back to Tracking
           </button>
         </div>
       </div>

@@ -324,7 +324,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (refreshedShipments && refreshedShipments.length > 0) {
-          const transformedShipments: Shipment[] = (refreshedShipments as any[]).map((ship: any) => ({
+          const transformedShipments: Shipment[] = (refreshedShipments as ShipmentWithCheckpoints[]).map((ship) => ({
             id: ship.id,
             senderName: ship.sender_name,
             senderPhone: ship.sender_phone,
@@ -336,7 +336,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             warehouse: ship.warehouse,
             transportation: ship.transportation,
             packageName: ship.package_name,
-            images: (ship.images || []).map((i: any) => resolveStorageUrl(i, 'shipment-images')),
+            images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
             vehiclesCount: ship.vehicles_count,
@@ -375,10 +375,10 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const updateShipment = useCallback(
-    async (id: string, data: any) => {
+    async (id: string, data: Partial<Shipment>) => {
       try {
         setLoading(true);
-        const updateData: any = {};
+        const updateData: Partial<DBShipment> = {};
         
         // Map fields to database column names
         if (data.senderName) updateData.sender_name = data.senderName;
@@ -514,7 +514,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         const shipment = shipments.find(s => s.id === id);
         if (!shipment) return;
 
-        let updateData: any = {};
+        let updateData: Partial<DBShipment> = {};
         
         if (!shipment.paused) {
           // Pausing

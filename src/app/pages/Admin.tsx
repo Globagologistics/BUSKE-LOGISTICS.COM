@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy, Check, Plus, Search, Filter, Eye, Edit2, Trash2, Truck, Package, AlertCircle, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
-import { AdminContext } from '../contexts/AdminContext';
+import { AdminContext, type Shipment, type Checkpoint } from '../contexts/AdminContext';
 
 export default function Admin() {
   const { shipments, deleteShipment, loading } = useContext(AdminContext);
@@ -48,21 +48,21 @@ export default function Admin() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const getStatusColor = (shipment: any) => {
+  const getStatusColor = (shipment: Shipment) => {
     if (shipment.terminated) return { bg: 'bg-red-50', text: 'text-red-700', badge: 'bg-red-100 text-red-800' };
     if (shipment.stopped) return { bg: 'bg-red-50', text: 'text-red-700', badge: 'bg-red-100 text-red-800' };
     if (shipment.paused) return { bg: 'bg-yellow-50', text: 'text-yellow-700', badge: 'bg-yellow-100 text-yellow-800' };
     return { bg: 'bg-green-50', text: 'text-green-700', badge: 'bg-green-100 text-green-800' };
   };
 
-  const getStatusLabel = (shipment: any) => {
+  const getStatusLabel = (shipment: Shipment) => {
     if (shipment.terminated) return 'Terminated';
     if (shipment.stopped) return 'Stopped';
     if (shipment.paused) return 'Paused';
     return 'Active';
   };
 
-  const getShipmentProgress = (shipment: any) => {
+  const getShipmentProgress = (shipment: Shipment) => {
     if (!shipment?.countdownStartTime || !shipment?.countdownDuration) return 0;
     const startMs = new Date(shipment.countdownStartTime).getTime();
     const totalMs = (shipment.countdownDuration || 0) * 3600 * 1000;
@@ -164,10 +164,10 @@ export default function Admin() {
             <div className="flex gap-2 sm:flex-1 lg:flex-none">
               <Filter className="w-5 h-5 text-gray-500 my-auto" />
               <div className="flex gap-2">
-                {['all', 'active', 'paused', 'stopped'].map((status) => (
+                {(['all', 'active', 'paused', 'stopped'] as const).map((status) => (
                   <button
                     key={status}
-                    onClick={() => setFilterStatus(status as any)}
+                    onClick={() => setFilterStatus(status)}
                     className={`px-4 py-2 rounded-lg font-medium transition-all ${
                       filterStatus === status
                         ? 'bg-[#2563EB] text-white'
@@ -285,7 +285,7 @@ export default function Admin() {
                           <div className="pt-2">
                             <p className="text-xs font-medium text-gray-700 mb-2">Route ({s.checkpoints.length} stops)</p>
                             <div className="flex h-3 gap-1 rounded-full overflow-hidden bg-white/40">
-                              {s.checkpoints.map((c: any, idx: number) => (
+                              {s.checkpoints.map((c: Checkpoint, idx: number) => (
                                 <div
                                   key={c.id}
                                   className={`flex-1 ${

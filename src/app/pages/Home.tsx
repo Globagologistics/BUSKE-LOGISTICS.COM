@@ -332,7 +332,8 @@ export default function Home() {
               },
               {
                 title: "Industrials",
-                image: "https://images.unsplash.com/photo-1512200488374-52213cba27e0?w=800&h=600&fit=crop",
+                type: "video",
+                embedUrl: "https://www.youtube.com/embed/vuAEjpZ4IEI",
               },
               {
                 title: "Food & Beverage",
@@ -342,27 +343,48 @@ export default function Home() {
                 title: "Retail & Distributors",
                 image: "https://cdn.prod.website-files.com/65eb5e8c0ab92f839985c896/65f09e6f0ef1ec08e5292b4d_Fairfield%20Overhead-p-800.png",
               },
-            ].map((industry, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="group relative h-64 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
-              >
-                <img
-                  src={industry.image}
-                  alt={industry.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300 flex items-end">
-                  <div className="w-full p-6">
-                    <h3 className="text-xl font-bold text-white">{industry.title}</h3>
+            ].map((industry, index) => {
+              const isVideo = "embedUrl" in industry;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="group relative h-64 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+                >
+                  {isVideo ? (
+                    <div className="absolute inset-0">
+                      <iframe
+                        src={industry.embedUrl}
+                        title="Buske Logistics Automotive Parts Sequencing"
+                        className="h-full w-full"
+                        frameBorder={0}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                      />
+                    </div>
+                  ) : (
+                    <img
+                      src={industry.image}
+                      alt={industry.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  )}
+                  <div
+                    className={`absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-all duration-300 flex items-end ${
+                      isVideo ? 'pointer-events-none' : ''
+                    }`}
+                  >
+                    <div className="w-full p-6">
+                      <h3 className="text-xl font-bold text-white">{industry.title}</h3>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>

@@ -2,8 +2,13 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BeforeInstallPromptEvent = any;
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+type WindowWithPrompt = Window & {
+  deferredPWAInstallPrompt?: BeforeInstallPromptEvent;
+};
 import { Mail, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 import { AdminContext } from "../contexts/AdminContext";
 
@@ -18,12 +23,12 @@ export function Footer() {
   useEffect(() => {
     const handler = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
-      (window as { deferredPWAInstallPrompt?: BeforeInstallPromptEvent }).deferredPWAInstallPrompt = e;
+      (window as WindowWithPrompt).deferredPWAInstallPrompt = e;
       setDeferredPrompt(e);
       setShowInstall(true);
     };
     window.addEventListener('beforeinstallprompt', handler as EventListener);
-    const existing = (window as { deferredPWAInstallPrompt?: BeforeInstallPromptEvent }).deferredPWAInstallPrompt;
+    const existing = (window as WindowWithPrompt).deferredPWAInstallPrompt;
     if (existing) {
       setDeferredPrompt(existing);
       setShowInstall(true);
@@ -64,12 +69,16 @@ export function Footer() {
   ];
 
   const handleInstallClick = async () => {
-    const evt = deferredPrompt || (window as any).deferredPWAInstallPrompt;
+    const evt = deferredPrompt || (window as WindowWithPrompt).deferredPWAInstallPrompt;
     if (!evt) return;
     evt.prompt();
     await evt.userChoice;
     setShowInstall(false);
-    try { delete (window as any).deferredPWAInstallPrompt; } catch {}
+    try {
+      delete (window as WindowWithPrompt).deferredPWAInstallPrompt;
+    } catch (error) {
+      console.warn("Failed to clear PWA install prompt", error);
+    }
   };
 
   return (
