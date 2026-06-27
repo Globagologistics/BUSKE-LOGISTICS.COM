@@ -23,6 +23,7 @@ export interface Shipment {
   transportation: string;
   packageName: string;
   images?: string[];
+  imageFiles?: File[];
   cost?: number;
   paid: boolean;
   checkpoints: Checkpoint[];
@@ -242,8 +243,16 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         console.log('🚀 addShipment: Starting shipment creation with ID:', id);
         console.log('📊 Admin ID:', adminId);
         
-        // Use image URLs directly (no upload)
+        // Use image URLs directly and upload device-selected images into Storage.
         const imageUrls: string[] = Array.isArray(data.images) ? data.images.filter((u: string) => u && u.trim() !== "") : [];
+        const imageFiles: File[] = Array.isArray(data.imageFiles) ? data.imageFiles : [];
+        for (const file of imageFiles) {
+          const { url, error } = await shipmentService.uploadImage('shipment-images', file, id);
+          if (error || !url) {
+            throw new Error(error || `Failed to upload ${file.name}`);
+          }
+          imageUrls.push(url);
+        }
 
         // Upload route screenshot if provided
         let routeImageUrl: string | undefined = undefined;
@@ -379,6 +388,18 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       try {
         setLoading(true);
         const updateData: Partial<DBShipment> = {};
+        const imageUrls: string[] = Array.isArray(data.images)
+          ? data.images.filter((u: string) => u && u.trim() !== "")
+          : [];
+        const imageFiles: File[] = Array.isArray(data.imageFiles) ? data.imageFiles : [];
+
+        for (const file of imageFiles) {
+          const { url, error } = await shipmentService.uploadImage('shipment-images', file, id);
+          if (error || !url) {
+            throw new Error(error || `Failed to upload ${file.name}`);
+          }
+          imageUrls.push(url);
+        }
         
         // Map fields to database column names
         if (data.senderName) updateData.sender_name = data.senderName;
@@ -391,8 +412,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         if (data.warehouse) updateData.warehouse = data.warehouse;
         if (data.transportation) updateData.transportation = data.transportation;
         if (data.packageName) updateData.package_name = data.packageName;
+        if (data.images !== undefined || data.imageFiles !== undefined) updateData.images = imageUrls;
         if (data.cost !== undefined) updateData.cost = data.cost;
         if (data.paid !== undefined) updateData.paid = data.paid;
+        if (data.vehiclesCount !== undefined) updateData.vehicles_count = data.vehiclesCount;
+        if (data.vehicleType !== undefined) updateData.vehicle_type = data.vehicleType;
+        if (data.driverName !== undefined) updateData.driver_name = data.driverName;
+        if (data.driverExperience !== undefined) updateData.driver_experience = data.driverExperience;
+        if (data.countdownDuration !== undefined) updateData.countdown_duration = data.countdownDuration * 3600;
         if (data.countdownStartTime) updateData.countdown_start_time = data.countdownStartTime;
         if (data.paused !== undefined) updateData.paused = data.paused;
         if (data.currentCheckpointIndex !== undefined) updateData.current_checkpoint_index = data.currentCheckpointIndex;

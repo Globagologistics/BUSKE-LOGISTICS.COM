@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AdminContext, Shipment, Checkpoint } from '../contexts/AdminContext';
-import { Copy, CheckCircle2 } from 'lucide-react';
+import { Copy, CheckCircle2, Upload, X } from 'lucide-react';
 
 const transportOptions = [
   'Air Freight',
@@ -29,6 +29,7 @@ export default function AdminForm() {
     transportation: editing?.transportation || transportOptions[0],
     packageName: editing?.packageName || '',
     images: editing?.images && Array.isArray(editing.images) ? editing.images : ["", "", ""] ,
+    imageFiles: [],
     cost: editing?.cost?.toString() || '',
     paid: editing?.paid || false,
     vehiclesCount: editing?.vehiclesCount || '',
@@ -56,6 +57,7 @@ export default function AdminForm() {
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const selectedImageFiles: File[] = Array.isArray(formData.imageFiles) ? formData.imageFiles : [];
 
   useEffect(() => {
     clearError();
@@ -101,6 +103,26 @@ export default function AdminForm() {
     } else {
       setFormData((d: any) => ({ ...d, [name]: value }));
     }
+  };
+
+  const handleProductImageFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setFormData((fd: any) => {
+      const currentFiles: File[] = Array.isArray(fd.imageFiles) ? fd.imageFiles : [];
+      const currentUrls = (fd.images || []).filter((url: string) => url && url.trim() !== "");
+      const availableSlots = Math.max(0, 6 - currentUrls.length - currentFiles.length);
+      return { ...fd, imageFiles: [...currentFiles, ...files.slice(0, availableSlots)] };
+    });
+    e.currentTarget.value = '';
+  };
+
+  const removeSelectedImageFile = (idx: number) => {
+    setFormData((fd: any) => ({
+      ...fd,
+      imageFiles: (Array.isArray(fd.imageFiles) ? fd.imageFiles : []).filter((_: File, i: number) => i !== idx),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,23 +196,24 @@ export default function AdminForm() {
     console.log('✓ Checkpoint validation passed');
 
 
-    // Validate product image URLs (minimum 3, maximum 6, all must be non-empty and valid URLs)
+    // Validate product images across URL and device-upload options.
     const imageUrls = (formData.images || []).filter((url: string) => url && url.trim() !== "");
-    if (imageUrls.length < 3) {
-      const errorMsg = 'Please provide at least 3 product image URLs (minimum 3, maximum 6)';
+    const imageFiles: File[] = Array.isArray(formData.imageFiles) ? formData.imageFiles : [];
+    const totalImages = imageUrls.length + imageFiles.length;
+    if (totalImages < 3) {
+      const errorMsg = 'Please add at least 3 product images using URLs, device uploads, or both (maximum 6 total)';
       console.error('Validation failed:', errorMsg);
       setValidationError(errorMsg);
       setIsSubmitting(false);
       return;
     }
-    if (imageUrls.length > 6) {
-      const errorMsg = 'Maximum 6 product image URLs allowed (minimum 3, maximum 6)';
+    if (totalImages > 6) {
+      const errorMsg = 'Maximum 6 product images allowed across URLs and uploads';
       console.error('Validation failed:', errorMsg);
       setValidationError(errorMsg);
       setIsSubmitting(false);
       return;
     }
-    // Optionally: validate URL format
     const urlPattern = /^https?:\/\//i;
     if (imageUrls.some((url: string) => !urlPattern.test(url))) {
       const errorMsg = 'All product image URLs must be valid (start with http or https)';
@@ -198,7 +221,13 @@ export default function AdminForm() {
       setIsSubmitting(false);
       return;
     }
-    console.log('✓ Image URL validation passed:', imageUrls.length, 'images');
+    if (imageFiles.some((file) => !file.type.startsWith('image/'))) {
+      const errorMsg = 'Uploaded product files must be images';
+      setValidationError(errorMsg);
+      setIsSubmitting(false);
+      return;
+    }
+    console.log('Product image validation passed:', totalImages, 'images');
 
     const checkpointArr: any[] = checkpointLocations.map((loc: string) => ({
       id: crypto.randomUUID(),
@@ -217,6 +246,7 @@ export default function AdminForm() {
       transportation: formData.transportation,
       packageName: formData.packageName,
       images: imageUrls,
+      imageFiles,
       cost: parseFloat(formData.cost) || 0,
       paid: formData.paid,
       checkpoints: checkpointArr,
@@ -693,7 +723,7 @@ export default function AdminForm() {
                 <h3 className="text-lg font-semibold text-[#0F1F3D] mb-4 flex items-center gap-2">
                   <span className="text-2xl">🖼️</span> Product Images
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">Add 3-6 product images. Get image URLs by right-clicking online images and selecting "Copy image address"</p>
+                <p className="text-sm text-gray-600 mb-4">Add 3-6 product images using image URLs, device uploads, or both.</p>
                 <div className="space-y-3">
                   {formData.images && formData.images.map((url: string, idx: number) => (
                     <div key={idx} className="flex gap-3 items-center">
@@ -708,7 +738,6 @@ export default function AdminForm() {
                             setFormData((fd: any) => ({ ...fd, images: newArr }));
                           }}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
-                          required={idx < 3}
                         />
                       </div>
                       {formData.images.length > 3 && (
@@ -727,7 +756,7 @@ export default function AdminForm() {
                       )}
                     </div>
                   ))}
-                  {formData.images && formData.images.length < 6 && (
+                  {formData.images && formData.images.length + selectedImageFiles.length < 6 && (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -738,7 +767,42 @@ export default function AdminForm() {
                       + Add another image URL (max 6 total)
                     </motion.button>
                   )}
-                  {validationError && validationError.includes('image') && (
+                  <div className="mt-5 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+                    <label
+                      htmlFor="productImageFiles"
+                      className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-sm font-semibold text-[#2563EB] shadow-sm ring-1 ring-gray-200 transition-all hover:bg-blue-50"
+                    >
+                      <Upload className="h-5 w-5" />
+                      Upload product images from device
+                    </label>
+                    <input
+                      id="productImageFiles"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleProductImageFilesChange}
+                      className="sr-only"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">Selected uploads count toward the same 6-image limit.</p>
+                    {selectedImageFiles.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {selectedImageFiles.map((file, idx) => (
+                          <div key={`${file.name}-${idx}`} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200">
+                            <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSelectedImageFile(idx)}
+                              className="rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                              aria-label={`Remove ${file.name}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {validationError && validationError.toLowerCase().includes('image') && (
                     <p className="mt-2 text-sm text-red-600 font-semibold">{validationError}</p>
                   )}
                 </div>
