@@ -6,7 +6,7 @@ import type { Shipment as DBShipment, Checkpoint as DBCheckpoint, ShipmentWithCh
 export interface Checkpoint extends DBCheckpoint {
   id: string;
   location: string;
-  pauseTimestamp?: string;
+  pauseTimestamp?: string | null;
 }
 
 export interface Shipment {
@@ -33,14 +33,14 @@ export interface Shipment {
   driverName?: string;
   driverExperience?: string;
   stopped?: boolean;
-  stopReason?: string;
-  stopTimestamp?: string;
+  stopReason?: string | null;
+  stopTimestamp?: string | null;
   paused?: boolean;
   countdownDuration?: number;
   countdownStartTime?: string;
-  pauseTimestamp?: string;
+  pauseTimestamp?: string | null;
   terminated?: boolean;
-  terminateTimestamp?: string;
+  terminateTimestamp?: string | null;
   routeScreenshot?: File | FileList;
   admin_id?: string;
   status?: string;
@@ -342,9 +342,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             receiverEmail: ship.receiver_email,
             pickupLocation: ship.pickup_location,
             deliveryAddress: ship.delivery_address,
-            warehouse: ship.warehouse,
+            warehouse: ship.warehouse || '',
             transportation: ship.transportation,
-            packageName: ship.package_name,
+            packageName: ship.package_name || '',
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,

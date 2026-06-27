@@ -50,16 +50,16 @@ export interface Shipment {
   
   // Pause/Resume Fields
   paused: boolean;
-  pause_timestamp?: string;
+  pause_timestamp?: string | null;
   
   // Stop Fields
   stopped: boolean;
-  stop_reason?: string;
-  stop_timestamp?: string;
+  stop_reason?: string | null;
+  stop_timestamp?: string | null;
   
   // Terminate Fields
   terminated?: boolean;
-  terminate_timestamp?: string;
+  terminate_timestamp?: string | null;
   
   // Progress Bar Visual Pause (independent of shipment pause)
   progress_bar_paused?: boolean;

@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from "react-router";
 import { PDFDownloadLink, Page, Text, View, Document, StyleSheet, Image } from "@react-pdf/renderer";
 import QRCode from "react-qr-code";
 import { format } from "date-fns";
-import { shipmentService } from "../services/shipmentService";
-import { Shipment } from "../types/database";
+import * as shipmentService from "../../services/shipmentService";
+import type { Shipment } from "../../types/database";
 
 // basic invoice document
 const styles = StyleSheet.create({
@@ -12,15 +12,16 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
   logo: { width: 60, height: 60 },
   section: { marginBottom: 12 },
-  table: { display: "table", width: "auto", borderStyle: "solid", borderWidth: 1, borderColor: "#ccc" },
+  table: { width: "auto", borderStyle: "solid", borderWidth: 1, borderColor: "#ccc" },
   tableRow: { margin: "auto", flexDirection: "row" },
   tableColHeader: { width: "50%", backgroundColor: "#eee", padding: 4, fontWeight: "bold" },
   tableCol: { width: "50%", padding: 4 },
 });
 
-function InvoiceDocument({ data }: { data: any }) {
-  const tax = data.shippingFee * 0.1;
-  const total = data.shippingFee + tax;
+function InvoiceDocument({ data }: { data: Shipment }) {
+  const shippingFee = data.cost ?? 0;
+  const tax = shippingFee * 0.1;
+  const total = shippingFee + tax;
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -38,23 +39,22 @@ function InvoiceDocument({ data }: { data: any }) {
         </View>
         <View style={styles.section}>
           <Text>Sender:</Text>
-          <Text>{data.senderName}</Text>
-          <Text>{data.senderAddress}</Text>
-          <Text>{data.senderEmail}</Text>
+          <Text>{data.sender_name}</Text>
+          <Text>{data.sender_email || ""}</Text>
         </View>
         <View style={styles.section}>
           <Text>Receiver:</Text>
-          <Text>{data.receiverName}</Text>
-          <Text>{data.deliveryAddress}</Text>
+          <Text>{data.receiver_name}</Text>
+          <Text>{data.delivery_address}</Text>
         </View>
         <View style={styles.section}>
           <Text>Package:</Text>
-          <Text>{data.packageName} ({data.weight || "N/A"})</Text>
-          <Text>Vehicles: {data.vehiclesCount}</Text>
+          <Text>{data.package_name || "Package"}</Text>
+          <Text>Vehicles: {data.vehicles_count ?? "N/A"}</Text>
         </View>
         <View style={styles.section}>
           <Text>Financials:</Text>
-          <Text>Shipping Fee: ${data.shippingFee?.toFixed(2)}</Text>
+          <Text>Shipping Fee: ${shippingFee.toFixed(2)}</Text>
           <Text>Tax (10%): ${tax.toFixed(2)}</Text>
           <Text>Total: ${total.toFixed(2)}</Text>
         </View>
@@ -70,7 +70,7 @@ function InvoiceDocument({ data }: { data: any }) {
 
 export default function Invoice() {
   const [params] = useSearchParams();
-  const [shipment, setShipment] = useState<any>(null);
+  const [shipment, setShipment] = useState<Shipment | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function Invoice() {
     <div className="max-w-3xl mx-auto py-12">
       <h1 className="text-2xl font-bold mb-4">Invoice for Shipment {shipment.id}</h1>
       <PDFDownloadLink document={<InvoiceDocument data={shipment} />} fileName={`invoice-${shipment.id}.pdf`}>
-        {({ blob, url, loading, error }) =>
+        {({ loading }) =>
           loading ? "Generating PDF..." : <button className="px-6 py-3 bg-blue-600 text-white rounded">Download PDF</button>
         }
       </PDFDownloadLink>

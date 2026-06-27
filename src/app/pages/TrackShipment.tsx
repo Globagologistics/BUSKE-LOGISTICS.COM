@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import ShipmentProgressBar from "../components/ShipmentProgressBar";
 import { Badge } from "../components/ui/badge";
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "../components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "../components/ui/carousel";
 import { calculateCheckpointTimes, isFlightShipment } from "../utils/trackingUtils";
 import { StarRating } from "../components/StarRating";
 import { useShipmentWithCheckpoints } from "../../hooks/useSupabase";
@@ -64,11 +64,7 @@ export default function TrackShipment() {
   const [updateTrigger, setUpdateTrigger] = useState(0); // Force re-render every second
   const [routeMapLoading, setRouteMapLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string | null>(null);
-  const [productCarouselApi, setProductCarouselApi] = useState<{
-    scrollNext: () => void;
-    scrollTo: (index: number) => void;
-    canScrollNext: () => boolean;
-  } | null>(null);
+  const [productCarouselApi, setProductCarouselApi] = useState<CarouselApi>(undefined);
 
   // Fetch shipment from Supabase with real-time updates
   const { shipment, loading, error } = useShipmentWithCheckpoints(trackingId || '');
@@ -914,5 +910,4 @@ export default function TrackShipment() {
     </div>
   );
 }
-
 

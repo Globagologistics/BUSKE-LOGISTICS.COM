@@ -55,7 +55,6 @@ const toMessage = (row: ChatMessageRow): ChatMessage => ({
 
 const makeFileId = () => {
   try {
-    // @ts-expect-error - Supabase channel typing for presence payloads is not strict
     return typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
       : `chat_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -306,7 +305,7 @@ export function useChatMessages(trackingId: string) {
           table: "chat_messages",
           filter: `tracking_id=eq.${trimmed}`,
         },
-        (payload) => {
+        (payload: { eventType: string; new: unknown; old: unknown }) => {
           const newRow = payload.new as ChatMessageRow;
           const oldRow = payload.old as ChatMessageRow;
 

@@ -9,8 +9,8 @@ export interface EnhancedCheckpoint extends Checkpoint {
 
 export function calculateCheckpointTimes(
   checkpoints: Checkpoint[],
-  departureTime: string,
-  estimatedArrival: string,
+  departureTime: string | null,
+  estimatedArrival: string | null,
   isFlightShipment: boolean
 ): EnhancedCheckpoint[] {
   if (!departureTime || !estimatedArrival || checkpoints.length === 0) {
