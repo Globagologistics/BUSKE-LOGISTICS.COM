@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AdminContext, Shipment, Checkpoint } from '../contexts/AdminContext';
-import { Copy, CheckCircle2, Upload, X } from 'lucide-react';
+import { Copy, CheckCircle2, X } from 'lucide-react';
 
 const transportOptions = [
   'Air Freight',
@@ -725,6 +725,41 @@ export default function AdminForm() {
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">Add 3-6 product images using image URLs, device uploads, or both.</p>
                 <div className="space-y-3">
+                  <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+                    <label htmlFor="productImageFiles" className="mb-2 block text-sm font-semibold text-gray-700">
+                      Option 2: Upload product images from device
+                    </label>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <input
+                        id="productImageFiles"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleProductImageFilesChange}
+                        className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-[#2563EB] file:px-4 file:py-3 file:text-sm file:font-semibold file:text-white hover:file:bg-[#1e4a9b]"
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">Selected uploads count toward the same 6-image limit.</p>
+                    {selectedImageFiles.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {selectedImageFiles.map((file, idx) => (
+                          <div key={`${file.name}-${idx}`} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200">
+                            <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSelectedImageFile(idx)}
+                              className="rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                              aria-label={`Remove ${file.name}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Option 1: Add image URLs</p>
                   {formData.images && formData.images.map((url: string, idx: number) => (
                     <div key={idx} className="flex gap-3 items-center">
                       <div className="flex-1">
@@ -767,41 +802,6 @@ export default function AdminForm() {
                       + Add another image URL (max 6 total)
                     </motion.button>
                   )}
-                  <div className="mt-5 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
-                    <label
-                      htmlFor="productImageFiles"
-                      className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-sm font-semibold text-[#2563EB] shadow-sm ring-1 ring-gray-200 transition-all hover:bg-blue-50"
-                    >
-                      <Upload className="h-5 w-5" />
-                      Upload product images from device
-                    </label>
-                    <input
-                      id="productImageFiles"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleProductImageFilesChange}
-                      className="sr-only"
-                    />
-                    <p className="mt-2 text-xs text-gray-500">Selected uploads count toward the same 6-image limit.</p>
-                    {selectedImageFiles.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        {selectedImageFiles.map((file, idx) => (
-                          <div key={`${file.name}-${idx}`} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200">
-                            <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => removeSelectedImageFile(idx)}
-                              className="rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
-                              aria-label={`Remove ${file.name}`}
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                   {validationError && validationError.toLowerCase().includes('image') && (
                     <p className="mt-2 text-sm text-red-600 font-semibold">{validationError}</p>
                   )}
