@@ -168,18 +168,20 @@ const safeError = (error: unknown) =>
 
 export const handler: Handler = async () => {
   try {
-    const supabaseUrl = required('SUPABASE_URL');
+    // The project URL is public. Reuse Vite's existing value so the worker
+    // does not need a duplicate Netlify setting.
+    const supabaseUrl = process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim() || required('SUPABASE_URL');
     // Prefer Supabase's current secret-key format.  The legacy service-role
     // name remains supported only for installations that have not migrated.
     const serviceRoleKey = process.env.SUPABASE_SECRET_KEY || required('SUPABASE_SERVICE_ROLE_KEY');
-    const smtpUser = required('SMTP_USER');
+    const smtpUser = process.env.SMTP_USER?.trim() || 'buskelogistics141@gmail.com';
     const smtpPassword = required('SMTP_APP_PASSWORD');
-    const adminEmail = required('ADMIN_EMAIL');
+    const adminEmail = process.env.ADMIN_EMAIL?.trim() || 'buskelogistics141@gmail.com';
     const appName = process.env.APP_NAME?.trim() || 'Buske Logistics';
     // APP_URL always remains the production site. For safe local email tests,
     // EMAIL_TEST_RECIPIENT plus LOCAL_APP_URL switches CTA links only; normal
     // customer delivery always uses the production URL.
-    const productionAppUrl = required('APP_URL');
+    const productionAppUrl = process.env.APP_URL?.trim() || 'https://buskelogistics.netlify.app';
     const testRecipient = process.env.EMAIL_TEST_RECIPIENT?.trim();
     const localAppUrl = process.env.LOCAL_APP_URL?.trim();
     const appUrl =
