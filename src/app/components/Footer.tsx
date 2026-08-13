@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -10,10 +10,8 @@ type WindowWithPrompt = Window & {
   deferredPWAInstallPrompt?: BeforeInstallPromptEvent;
 };
 import { Mail, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
-import { AdminContext } from "../contexts/AdminContext";
 
 export function Footer() {
-  const { unlockAdmin } = useContext(AdminContext);
   const navigate = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstall, setShowInstall] = useState(false);
@@ -38,11 +36,10 @@ export function Footer() {
 
   useEffect(() => {
     if (copyrightClicks === 5) {
-      unlockAdmin();
-      navigate("/admin");
+      navigate("/signin?next=/admin");
       setCopyrightClicks(0);
     }
-  }, [copyrightClicks, navigate, unlockAdmin]);
+  }, [copyrightClicks, navigate]);
 
   const handleCopyrightClick = () => {
     setCopyrightClicks((c) => c + 1);

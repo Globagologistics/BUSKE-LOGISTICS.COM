@@ -1,0 +1,288 @@
+import type { Config, Handler } from '@netlify/functions';
+import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
+
+const MAX_ATTEMPTS = 3;
+const BATCH_SIZE = 20;
+
+type EventType =
+  | 'shipment_published'
+  | 'shipment_status_changed'
+  | 'on_hold'
+  | 'released'
+  | 'payment_confirmed'
+  | 'delivered'
+  | 'terminated'
+  | 'chat_customer_message'
+  | 'chat_admin_reply';
+
+type NotificationEvent = {
+  id: string;
+  shipment_id: string;
+  event_type: EventType;
+  event_payload: Record<string, unknown>;
+  attempt_count: number;
+};
+
+type Shipment = {
+  id: string;
+  sender_name: string;
+  sender_email: string | null;
+  receiver_name: string;
+  receiver_email: string | null;
+  pickup_location: string | null;
+  delivery_address: string;
+  package_name: string | null;
+  transportation: string;
+  status: string;
+  stopped: boolean;
+  paused: boolean;
+  terminated: boolean;
+  paid: boolean;
+  cost: number | null;
+  published_at: string | null;
+};
+
+type Recipient = { email: string; role: 'admin' | 'sender' | 'receiver'; name: string };
+
+const required = (name: string) => {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Missing required server environment variable: ${name}`);
+  return value;
+};
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+const humanizeStatus = (shipment: Shipment) => {
+  if (shipment.terminated) return 'Terminated';
+  if (shipment.status === 'delivered') return 'Delivered';
+  if (shipment.stopped || shipment.paused) return 'On hold';
+  return shipment.status.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const eventCopy = (eventType: EventType) => {
+  switch (eventType) {
+    case 'shipment_published':
+      return { heading: 'Your consignment has been registered', subject: 'Your Consignment Has Been Registered' };
+    case 'on_hold':
+      return { heading: 'Your consignment is currently on hold', subject: 'Your Consignment Is Currently On Hold' };
+    case 'released':
+      return { heading: 'Your consignment has been released', subject: 'Your Consignment Has Been Released' };
+    case 'payment_confirmed':
+      return { heading: 'Payment confirmed for your consignment', subject: 'Payment Confirmed' };
+    case 'delivered':
+      return { heading: 'Your consignment has been delivered', subject: 'Shipment Delivered' };
+    case 'terminated':
+      return { heading: 'Important consignment update', subject: 'Important Shipment Update' };
+    case 'chat_customer_message':
+      return { heading: 'You have a new consignment message', subject: 'New Consignment Message' };
+    case 'chat_admin_reply':
+      return { heading: 'You have a new response regarding your consignment', subject: 'New Message About Your Consignment' };
+    default:
+      return { heading: 'Your consignment has been updated', subject: 'Shipment Update' };
+  }
+};
+
+function recipientsFor(event: NotificationEvent, shipment: Shipment, adminEmail: string): Recipient[] {
+  const recipients: Recipient[] = [];
+  const add = (email: string | null, role: Recipient['role'], name: string) => {
+    if (email && /^\S+@\S+\.\S+$/.test(email)) recipients.push({ email: email.trim(), role, name });
+  };
+
+  if (event.event_type === 'chat_customer_message') {
+    add(adminEmail, 'admin', 'Operations team');
+  } else if (event.event_type === 'chat_admin_reply') {
+    // The legacy chat schema has one customer role rather than sender/receiver roles.
+    // Both shipment parties are notified without disclosing the private message body.
+    add(shipment.sender_email, 'sender', shipment.sender_name);
+    add(shipment.receiver_email, 'receiver', shipment.receiver_name);
+  } else {
+    add(shipment.sender_email, 'sender', shipment.sender_name);
+    add(shipment.receiver_email, 'receiver', shipment.receiver_name);
+    add(adminEmail, 'admin', 'Operations team');
+  }
+
+  return [...new Map(recipients.map((recipient) => [recipient.email.toLowerCase(), recipient])).values()];
+}
+
+function renderEmail({
+  event,
+  shipment,
+  recipient,
+  appName,
+  appUrl,
+  supportUrl,
+  logoUrl,
+}: {
+  event: NotificationEvent;
+  shipment: Shipment;
+  recipient: Recipient;
+  appName: string;
+  appUrl: string;
+  supportUrl: string;
+  logoUrl?: string;
+}) {
+  const copy = eventCopy(event.event_type);
+  const trackingUrl = `${appUrl.replace(/\/$/, '')}/track/${encodeURIComponent(shipment.id)}`;
+  const isChat = event.event_type === 'chat_customer_message' || event.event_type === 'chat_admin_reply';
+  const actionUrl = isChat ? supportUrl : trackingUrl;
+  const actionLabel = isChat ? 'Open Consignment Inbox' : 'Track Consignment';
+  const reason = typeof event.event_payload.reason === 'string' ? event.event_payload.reason.trim() : '';
+  const intro =
+    event.event_type === 'shipment_published'
+      ? 'Your shipment has been registered and is ready to track.'
+      : event.event_type === 'released'
+        ? 'Processing or transit has resumed.'
+        : event.event_type === 'delivered'
+          ? 'We are pleased to confirm delivery.'
+          : event.event_type === 'terminated'
+            ? 'Please contact support if you need assistance with next steps.'
+            : isChat
+              ? 'For privacy, this email does not include the message content.'
+              : 'You can review the latest shipment information at any time.';
+  const adminDetails = recipient.role === 'admin'
+    ? `<p style="margin:0 0 8px"><strong>Sender:</strong> ${escapeHtml(shipment.sender_name)}</p><p style="margin:0"><strong>Receiver:</strong> ${escapeHtml(shipment.receiver_name)}</p>`
+    : '';
+  const payment = recipient.role === 'admin' && shipment.cost !== null
+    ? `<p style="margin:16px 0 0;color:#334155"><strong>Payment:</strong> ${shipment.paid ? 'Paid' : 'Unpaid'}${shipment.cost !== null ? ` · ${escapeHtml(shipment.cost)}` : ''}</p>`
+    : '';
+  const logo = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(appName)} logo" width="44" height="44" style="display:block;border:0;border-radius:8px;margin:0 auto 12px" />`
+    : '';
+  const text = `${appName}\n\nHello ${recipient.name || 'there'},\n\n${copy.heading}. ${intro}\n\nTracking ID: ${shipment.id}\nStatus: ${humanizeStatus(shipment)}\nOrigin: ${shipment.pickup_location || 'Not available'}\nDestination: ${shipment.delivery_address}${reason ? `\nUpdate: ${reason}` : ''}\n\n${actionLabel}: ${actionUrl}\n\nNeed help? ${supportUrl}`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1f5f9"><tr><td align="center" style="padding:28px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden"><tr><td style="background:#0f3a6d;padding:28px;text-align:center;color:#ffffff">${logo}<div style="font-size:20px;font-weight:700">${escapeHtml(appName)}</div></td></tr><tr><td style="padding:32px"><p style="margin:0 0 16px;font-size:16px">Hello ${escapeHtml(recipient.name || 'there')},</p><h1 style="margin:0 0 14px;font-size:24px;line-height:1.3">${escapeHtml(copy.heading)}</h1><p style="margin:0 0 24px;line-height:1.55;color:#475569">${escapeHtml(intro)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #dbeafe;border-radius:12px;background:#f8fbff"><tr><td style="padding:22px"><div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#475569;text-transform:uppercase">Tracking ID</div><div style="margin:6px 0 18px;font-family:monospace;font-size:22px;font-weight:700;word-break:break-all;color:#0f3a6d">${escapeHtml(shipment.id)}</div><p style="margin:0 0 8px"><strong>Status:</strong> ${escapeHtml(humanizeStatus(shipment))}</p><p style="margin:0 0 8px"><strong>Origin:</strong> ${escapeHtml(shipment.pickup_location || 'Not available')}</p><p style="margin:0"><strong>Destination:</strong> ${escapeHtml(shipment.delivery_address)}</p>${reason ? `<p style="margin:16px 0 0;color:#334155"><strong>Update:</strong> ${escapeHtml(reason)}</p>` : ''}${payment}${adminDetails ? `<div style="margin-top:16px;color:#334155">${adminDetails}</div>` : ''}</td></tr></table><table role="presentation" cellspacing="0" cellpadding="0" style="margin:26px auto 8px"><tr><td style="border-radius:8px;background:#2563eb"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-weight:700">${escapeHtml(actionLabel)}</a></td></tr></table><p style="margin:22px 0 0;font-size:13px;line-height:1.5;color:#64748b">Need help? <a href="${escapeHtml(supportUrl)}" style="color:#2563eb">Contact support</a>.</p></td></tr><tr><td style="padding:22px 32px;background:#f8fafc;color:#64748b;font-size:12px;line-height:1.5">${escapeHtml(appName)} · <a href="${escapeHtml(appUrl)}" style="color:#2563eb">${escapeHtml(appUrl)}</a><br />This is an automated operational email. Please do not reply to this message.</td></tr></table></td></tr></table></body></html>`;
+
+  return { subject: `${copy.subject} — ${shipment.id}`, html, text };
+}
+
+const safeError = (error: unknown) =>
+  String(error instanceof Error ? error.message : error)
+    .replace(/(pass(word)?|auth|token)\s*[:=]\s*[^\s,;]+/gi, '$1=[redacted]')
+    .slice(0, 500);
+
+export const handler: Handler = async () => {
+  try {
+    const supabaseUrl = required('SUPABASE_URL');
+    // Prefer Supabase's current secret-key format.  The legacy service-role
+    // name remains supported only for installations that have not migrated.
+    const serviceRoleKey = process.env.SUPABASE_SECRET_KEY || required('SUPABASE_SERVICE_ROLE_KEY');
+    const smtpUser = required('SMTP_USER');
+    const smtpPassword = required('SMTP_APP_PASSWORD');
+    const adminEmail = required('ADMIN_EMAIL');
+    const appName = process.env.APP_NAME?.trim() || 'Buske Logistics';
+    // APP_URL always remains the production site. For safe local email tests,
+    // EMAIL_TEST_RECIPIENT plus LOCAL_APP_URL switches CTA links only; normal
+    // customer delivery always uses the production URL.
+    const productionAppUrl = required('APP_URL');
+    const testRecipient = process.env.EMAIL_TEST_RECIPIENT?.trim();
+    const localAppUrl = process.env.LOCAL_APP_URL?.trim();
+    const appUrl =
+      process.env.EMAIL_LINK_BASE_URL?.trim() ||
+      (testRecipient && localAppUrl ? localAppUrl : productionAppUrl);
+    const supportUrl =
+      process.env.SUPPORT_URL?.trim() || `${appUrl.replace(/\/$/, '')}/chat`;
+    const logoUrl =
+      process.env.LOGO_URL?.trim() ||
+      `${productionAppUrl.replace(/\/$/, '')}/buske-logo.jpeg`;
+    const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST?.trim() || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT || 465),
+      secure: (process.env.SMTP_SECURE || 'true').toLowerCase() === 'true',
+      auth: { user: smtpUser, pass: smtpPassword },
+    });
+
+    const { data: events, error: eventsError } = await supabase
+      .from('notification_events')
+      .select('id, shipment_id, event_type, event_payload, attempt_count')
+      .in('status', ['pending', 'failed'])
+      .lt('attempt_count', MAX_ATTEMPTS)
+      .lte('next_attempt_at', new Date().toISOString())
+      .order('created_at', { ascending: true })
+      .limit(BATCH_SIZE);
+    if (eventsError) throw eventsError;
+
+    let sent = 0;
+    let failed = 0;
+    for (const event of (events || []) as NotificationEvent[]) {
+      const { data: shipment, error: shipmentError } = await supabase
+        .from('shipments')
+        .select('id, sender_name, sender_email, receiver_name, receiver_email, pickup_location, delivery_address, package_name, transportation, status, stopped, paused, terminated, paid, cost, published_at')
+        .eq('id', event.shipment_id)
+        .single();
+      if (shipmentError || !shipment) {
+        await supabase.from('notification_events').update({ status: 'failed', attempt_count: event.attempt_count + 1, last_error: 'Shipment record is unavailable', next_attempt_at: new Date(Date.now() + 15 * 60_000).toISOString() }).eq('id', event.id);
+        failed += 1;
+        continue;
+      }
+
+      const recipients = recipientsFor(event, shipment as Shipment, adminEmail);
+      if (!recipients.length) {
+        await supabase.from('notification_events').update({ status: 'processed', processed_at: new Date().toISOString(), last_error: 'No valid recipient email address' }).eq('id', event.id);
+        continue;
+      }
+
+      const deliveryRows = recipients.map((recipient) => ({
+        event_id: event.id,
+        shipment_id: event.shipment_id,
+        tracking_id: event.shipment_id,
+        recipient_email: recipient.email,
+        recipient_type: recipient.role,
+        notification_type: event.event_type,
+        subject: eventCopy(event.event_type).subject,
+      }));
+      const { error: upsertError } = await supabase.from('notification_deliveries').upsert(deliveryRows, { onConflict: 'event_id,recipient_email', ignoreDuplicates: true });
+      if (upsertError) throw upsertError;
+
+      const { data: deliveries, error: deliveriesError } = await supabase
+        .from('notification_deliveries')
+        .select('id, recipient_email, recipient_type, delivery_status, attempt_count')
+        .eq('event_id', event.id)
+        .neq('delivery_status', 'sent');
+      if (deliveriesError) throw deliveriesError;
+
+      let eventFailed = false;
+      for (const delivery of deliveries || []) {
+        const recipient = recipients.find((item) => item.email.toLowerCase() === delivery.recipient_email.toLowerCase());
+        if (!recipient || delivery.attempt_count >= MAX_ATTEMPTS) continue;
+        const message = renderEmail({ event, shipment: shipment as Shipment, recipient, appName, appUrl, supportUrl, logoUrl });
+        try {
+          const target = testRecipient || recipient.email;
+          const result = await transporter.sendMail({
+            from: `${appName} <${smtpUser}>`,
+            to: target,
+            subject: testRecipient ? `[TEST] ${message.subject}` : message.subject,
+            text: message.text,
+            html: message.html,
+          });
+          await supabase.from('notification_deliveries').update({ delivery_status: 'sent', sent_at: new Date().toISOString(), provider_message_id: result.messageId || null, attempt_count: delivery.attempt_count + 1, error_summary: null }).eq('id', delivery.id);
+          sent += 1;
+        } catch (error) {
+          eventFailed = true;
+          failed += 1;
+          await supabase.from('notification_deliveries').update({ delivery_status: 'failed', attempt_count: delivery.attempt_count + 1, error_summary: safeError(error) }).eq('id', delivery.id);
+        }
+      }
+
+      const nextAttempt = event.attempt_count + 1;
+      await supabase.from('notification_events').update(eventFailed
+        ? { status: 'failed', attempt_count: nextAttempt, last_error: 'One or more delivery attempts failed', next_attempt_at: new Date(Date.now() + Math.min(60, 5 * 2 ** event.attempt_count) * 60_000).toISOString() }
+        : { status: 'processed', attempt_count: nextAttempt, processed_at: new Date().toISOString(), last_error: null },
+      ).eq('id', event.id);
+    }
+
+    await transporter.close();
+    return { statusCode: 200, body: JSON.stringify({ processed: (events || []).length, sent, failed }) };
+  } catch (error) {
+    console.error('Notification dispatch failed:', safeError(error));
+    return { statusCode: 500, body: JSON.stringify({ error: 'Notification dispatch failed' }) };
+  }
+};
+
+export const config: Config = { schedule: '*/5 * * * *' };

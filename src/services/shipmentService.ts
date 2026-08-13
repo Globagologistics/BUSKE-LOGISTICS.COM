@@ -1,6 +1,31 @@
 import { supabase } from '../lib/supabase';
 import type { Shipment, Checkpoint } from '../types/database';
 
+const IMAGE_UPLOAD_TIMEOUT_MS = 30000;
+
+function sanitizeStorageFileName(fileName: string) {
+  const safeName = fileName
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return safeName || 'product-image';
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMessage: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), IMAGE_UPLOAD_TIMEOUT_MS);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 export async function createShipment(shipmentData: Partial<Shipment>) {
   try {
     console.log('📦 Creating shipment with ID:', shipmentData.id);
@@ -173,10 +198,16 @@ export async function uploadImage(
   shipmentId: string
 ) {
   try {
-    const fileName = `${shipmentId}-${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, file);
+    const fileName = `${shipmentId}/${Date.now()}-${crypto.randomUUID()}-${sanitizeStorageFileName(file.name)}`;
+    const uploadResult = await withTimeout(
+      supabase.storage.from(bucket).upload(fileName, file, {
+        cacheControl: '3600',
+        contentType: file.type || undefined,
+        upsert: false,
+      }),
+      `Image upload timed out. Check that the Supabase "${bucket}" bucket exists and allows uploads.`
+    ) as { error: Error | null };
+    const { error: uploadError } = uploadResult;
 
     if (uploadError) throw uploadError;
 

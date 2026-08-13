@@ -80,7 +80,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
         const makeId = () => {
           try {
             // prefer crypto.randomUUID when available
-            // @ts-expect-error - Supabase query typing can be too strict for dynamic selects
             return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
           } catch (e) {
             return `dev-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
@@ -131,6 +130,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
       },
       auth: {
         getUser: async () => ({ data: { user: null }, error: null }),
+        signInWithPassword: async () => ({ data: { user: null, session: null }, error: new Error('Supabase credentials are required to sign in.') }),
+        signUp: async () => ({ data: { user: null, session: null }, error: new Error('Supabase credentials are required to create an account.') }),
         signOut: async () => ({ error: null }),
         getSession: async () => ({ data: { session: null }, error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),

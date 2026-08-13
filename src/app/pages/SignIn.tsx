@@ -1,23 +1,41 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { Package, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { supabase } from "../../lib/supabase";
+
+const REMEMBERED_EMAIL_KEY = "buske-remembered-email";
 
 export default function SignIn() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => window.localStorage.getItem(REMEMBERED_EMAIL_KEY) || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(
+    () => Boolean(window.localStorage.getItem(REMEMBERED_EMAIL_KEY))
+  );
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setAuthError(null);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setAuthError(error.message);
       setIsLoading(false);
-      setSubmitted(true);
-    }, 1500);
+      return;
+    }
+    if (rememberMe) {
+      window.localStorage.setItem(REMEMBERED_EMAIL_KEY, email.trim());
+    } else {
+      window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+    }
+    setSubmitted(false);
+    navigate(searchParams.get("next") || "/home", { replace: true });
   };
 
   if (submitted) {
@@ -52,12 +70,6 @@ export default function SignIn() {
                 className="px-4 py-2 bg-gray-300 rounded-md"
               >
                 Back to Home
-              </button>
-              <button
-                onClick={() => navigate('/signup')}
-                className="px-4 py-2 bg-green-500 text-white rounded-md"
-              >
-                Or Sign Up
               </button>
             </div>
           </div>
@@ -102,6 +114,11 @@ export default function SignIn() {
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {authError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {authError}
+              </div>
+            )}
             {/* Email Field */}
             <div>
               <label
@@ -167,6 +184,8 @@ export default function SignIn() {
                 <input
                   id="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
                 />
                 <label
@@ -201,25 +220,9 @@ export default function SignIn() {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">
-                Don't have an account?
-              </span>
-            </div>
-          </div>
-
-          {/* Sign Up Link */}
-          <Link
-            to="/signup"
-            className="block w-full py-3 px-4 bg-white text-[#0F1F3D] font-semibold rounded-xl border-2 border-gray-200 hover:border-[#2563EB] hover:bg-gray-50 transition-all duration-300 text-center"
-          >
-            Create Account
-          </Link>
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Account registration is managed by Buske Logistics.
+          </p>
         </div>
 
         {/* Back to Home */}

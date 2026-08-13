@@ -289,6 +289,22 @@ export default function AdminDetail() {
     }
   };
 
+  const handlePublish = async () => {
+    if (!shipment || shipment.is_published) return;
+    setIsSaving(true);
+    try {
+      const { error } = await shipmentService.updateShipment(shipment.id, {
+        is_published: true,
+      });
+      if (error) throw new Error(error);
+    } catch (error) {
+      console.error('Error publishing shipment:', error);
+      alert('The shipment could not be published. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const getCurrentPercent = (s: any) => {
     if (!s) return 0;
     if (s.countdown_duration && s.countdown_start_time) {
@@ -332,6 +348,9 @@ export default function AdminDetail() {
         </div>
 
         <div className="flex items-center gap-3">
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${shipment.is_published ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+            {shipment.is_published ? 'Published' : 'Draft'}
+          </div>
           <div className={`px-3 py-1 rounded-full text-sm font-medium ${shipment.terminated ? 'bg-red-100 text-red-700' : shipment.stopped ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
             {shipment.terminated ? 'Terminated' : shipment.stopped ? 'Stopped' : shipment.paused ? 'Paused' : 'In Transit'}
           </div>
@@ -502,6 +521,7 @@ export default function AdminDetail() {
           <div className="bg-white rounded-2xl p-4 shadow border border-gray-100">
             <h4 className="text-sm font-semibold mb-4">Actions</h4>
             <div className="space-y-2 flex flex-col">
+              {!shipment.is_published && <button onClick={handlePublish} disabled={isSaving} className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-all disabled:opacity-60">Publish &amp; notify</button>}
               {!shipment.terminated && !shipment.stopped && <button onClick={handlePauseToggle} disabled={isSaving} className="px-4 py-2 bg-yellow-500 text-white rounded-md font-medium hover:bg-yellow-600 transition-all">{shipment.paused ? 'Resume' : 'Pause'}</button>}
               {!shipment.terminated && !shipment.stopped ? <button onClick={handleStop} className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-all">Stop</button> : !shipment.terminated && shipment.stopped ? <button onClick={handleResume} className="px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-all">Resume</button> : null}
               {!shipment.terminated && <button onClick={handleTerminate} className="px-4 py-2 bg-red-800 text-white rounded-md font-medium hover:bg-red-900 transition-all">Terminate</button>}

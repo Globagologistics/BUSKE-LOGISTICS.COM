@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { Search } from "lucide-react";
+import { useShipmentWithCheckpoints } from "../../hooks/useSupabase";
 
 const backgroundImages = [
   "https://media.istockphoto.com/id/2157040201/photo/truck-carrying-forty-foot-container-leaving-port-terminal-with-ship-and-quay-crane-on-the.jpg?s=612x612&w=0&k=20&c=D4UJJ09jrr-lkrP_6FvIAj6-2PosXIzg-iQ_HcxD0iQ=",
@@ -14,6 +15,8 @@ export default function TrackShipmentSearch() {
   const navigate = useNavigate();
   const [trackingId, setTrackingId] = useState(searchParams.get("id") || "");
   const [bgIndex, setBgIndex] = useState(0);
+  const [lookupId, setLookupId] = useState("");
+  const { shipment: matchedShipment, loading: lookupLoading } = useShipmentWithCheckpoints(lookupId);
 
   useEffect(() => {
     if (backgroundImages.length < 2) return;
@@ -29,6 +32,23 @@ export default function TrackShipmentSearch() {
       navigate(`/track/${encodeURIComponent(id)}`, { replace: true });
     }
   }, [searchParams, navigate]);
+
+  // Check the entered ID after the user pauses typing. A matching shipment
+  // opens directly, so customers do not need to press the Track button.
+  useEffect(() => {
+    const value = trackingId.trim();
+    if (!value) {
+      setLookupId("");
+      return;
+    }
+    const timer = window.setTimeout(() => setLookupId(value), 500);
+    return () => window.clearTimeout(timer);
+  }, [trackingId]);
+
+  useEffect(() => {
+    if (!lookupId || lookupLoading || !matchedShipment) return;
+    navigate(`/track/${encodeURIComponent(matchedShipment.id)}`, { replace: true });
+  }, [lookupId, lookupLoading, matchedShipment, navigate]);
 
   const handleTrack = (event: React.FormEvent) => {
     event.preventDefault();

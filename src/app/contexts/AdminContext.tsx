@@ -33,20 +33,18 @@ export interface Shipment {
   driverName?: string;
   driverExperience?: string;
   stopped?: boolean;
-  stopReason?: string;
-  stopTimestamp?: string;
+  stopReason?: string | null;
+  stopTimestamp?: string | null;
   paused?: boolean;
   countdownDuration?: number;
   countdownStartTime?: string;
-  pauseTimestamp?: string;
+  pauseTimestamp?: string | null;
   terminated?: boolean;
-  terminateTimestamp?: string;
+  terminateTimestamp?: string | null;
   routeScreenshot?: File | FileList;
   admin_id?: string;
   status?: string;
 }
-
-const ADMIN_UNLOCK_KEY = "admin-unlocked";
 
 interface AdminContextType {
   shipments: Shipment[];
@@ -56,7 +54,6 @@ interface AdminContextType {
   togglePause: (id: string) => Promise<void>;
   deleteShipment: (id: string) => Promise<void>;
   isAdmin: boolean;
-  unlockAdmin: () => void;
   loading: boolean;
   error: string | null;
   clearError: () => void;
@@ -70,7 +67,6 @@ export const AdminContext = createContext<AdminContextType>({
   togglePause: async () => {},
   deleteShipment: async () => {},
   isAdmin: false,
-  unlockAdmin: () => {},
   loading: false,
   error: null,
   clearError: () => {},
@@ -78,10 +74,7 @@ export const AdminContext = createContext<AdminContextType>({
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [isAdmin, setIsAdmin] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(ADMIN_UNLOCK_KEY) === "true";
-  });
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adminId, setAdminId] = useState<string>('');
@@ -104,22 +97,36 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
-          console.warn('⚠️ No authenticated user found. Using demo mode with default admin (00000000-0000-0000-0000-000000000000).');
-          // Use default admin ID from SQL schema for testing - replace with real auth in production
-          setAdminId('00000000-0000-0000-0000-000000000000');
+          setAdminId('');
+          setIsAdmin(false);
           return;
         }
         console.log('✅ Authenticated user found:', user.id);
+        const { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('user_type')
+          .eq('id', user.id)
+          .single();
+        if (profileError || profile?.user_type !== 'admin') {
+          setAdminId('');
+          setIsAdmin(false);
+          return;
+        }
         setAdminId(user.id);
         setIsAdmin(true);
-      } catch (error) {
-        console.error('❌ Error initializing admin:', error);
-        // Fallback to default admin ID
-        setAdminId('00000000-0000-0000-0000-000000000000');
+      } catch {
+        setAdminId('');
+        setIsAdmin(false);
       }
     };
 
-    initializeAdmin();
+    void initializeAdmin();
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      void initializeAdmin();
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   // Fetch shipments on mount
@@ -342,9 +349,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             receiverEmail: ship.receiver_email,
             pickupLocation: ship.pickup_location,
             deliveryAddress: ship.delivery_address,
-            warehouse: ship.warehouse,
+            warehouse: ship.warehouse || '',
             transportation: ship.transportation,
-            packageName: ship.package_name,
+            packageName: ship.package_name || '',
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
@@ -404,6 +411,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         // Map fields to database column names
         if (data.senderName) updateData.sender_name = data.senderName;
         if (data.senderPhone) updateData.sender_phone = data.senderPhone;
+        if (data.senderEmail !== undefined) updateData.sender_email = data.senderEmail;
         if (data.receiverName) updateData.receiver_name = data.receiverName;
         if (data.receiverPhone) updateData.receiver_phone = data.receiverPhone;
         if (data.receiverEmail) updateData.receiver_email = data.receiverEmail;
@@ -675,15 +683,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     [adminId]
   );
 
-  const unlockAdmin = useCallback(() => {
-    setIsAdmin(true);
-    try {
-      window.localStorage.setItem(ADMIN_UNLOCK_KEY, "true");
-    } catch (err) {
-      void err;
-    }
-  }, []);
-
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -698,7 +697,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         stopShipment,
         togglePause,
         isAdmin,
-        unlockAdmin,
         loading,
         error,
         clearError,

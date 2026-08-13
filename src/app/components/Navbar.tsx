@@ -108,7 +108,7 @@ export function Navbar() {
               Sign In
             </Link>
             <Link
-              to="/signup"
+              to="/signin"
               className="px-5 py-2.5 font-medium bg-gradient-to-r from-[#2563EB] to-[#38BDF8] text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105"
             >
               Sign Up
@@ -162,7 +162,7 @@ export function Navbar() {
                 Sign In
               </Link>
               <Link
-                to="/signup"
+                to="/signin"
                 onClick={() => setMobileMenuOpen(false)}
                 className="block w-full px-5 py-2.5 text-center font-medium bg-gradient-to-r from-[#2563EB] to-[#38BDF8] text-white rounded-xl"
               >

@@ -50,19 +50,25 @@ export interface Shipment {
   
   // Pause/Resume Fields
   paused: boolean;
-  pause_timestamp?: string;
+  pause_timestamp?: string | null;
   
   // Stop Fields
   stopped: boolean;
-  stop_reason?: string;
-  stop_timestamp?: string;
+  stop_reason?: string | null;
+  stop_timestamp?: string | null;
   
   // Terminate Fields
   terminated?: boolean;
-  terminate_timestamp?: string;
+  terminate_timestamp?: string | null;
   
   // Progress Bar Visual Pause (independent of shipment pause)
   progress_bar_paused?: boolean;
+
+  // Publication is an explicit lifecycle transition. Draft shipments do not
+  // create customer notification events until is_published becomes true.
+  is_published?: boolean;
+  published_at?: string;
+  customer_status_reason?: string;
   
   // Tracking
   current_checkpoint_index: number;

@@ -21,6 +21,7 @@ export default function AdminForm() {
     id: editing ? editing.id : crypto.randomUUID(),
     senderName: editing?.senderName || '',
     senderPhone: editing?.senderPhone || '',
+    senderEmail: editing?.senderEmail || '',
     receiverName: editing?.receiverName || '',
     receiverPhone: editing?.receiverPhone || '',
     receiverEmail: editing?.receiverEmail || '',
@@ -136,6 +137,7 @@ export default function AdminForm() {
     const requiredFields = [
       { key: 'senderName', label: 'Sender Name' },
       { key: 'senderPhone', label: 'Sender Phone' },
+      { key: 'senderEmail', label: 'Sender Email' },
       { key: 'receiverName', label: 'Receiver Name' },
       { key: 'receiverPhone', label: 'Receiver Phone' },
       { key: 'receiverEmail', label: 'Receiver Email' },
@@ -238,6 +240,7 @@ export default function AdminForm() {
       id: formData.id,
       senderName: formData.senderName,
       senderPhone: formData.senderPhone,
+      senderEmail: formData.senderEmail,
       receiverName: formData.receiverName,
       receiverPhone: formData.receiverPhone,
       receiverEmail: formData.receiverEmail,
@@ -392,6 +395,20 @@ export default function AdminForm() {
                       name="senderPhone"
                       placeholder="+1 (555) 000-0000"
                       value={formData.senderPhone}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label htmlFor="senderEmail" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="senderEmail"
+                      type="email"
+                      name="senderEmail"
+                      placeholder="john@example.com"
+                      value={formData.senderEmail}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
                     />
@@ -824,7 +841,6 @@ export default function AdminForm() {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isSubmitting}
-                onClick={handleSubmit}
                 className={`px-8 py-4 font-semibold rounded-lg transition-all duration-200 ${
                   isSubmitting
                     ? 'bg-gray-400 cursor-not-allowed'

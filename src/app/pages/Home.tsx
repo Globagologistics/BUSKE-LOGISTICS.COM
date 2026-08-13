@@ -193,7 +193,7 @@ export default function Home() {
                 Sign In
               </button>
               <button
-                onClick={() => navigate("/signup")}
+                onClick={() => navigate("/signin")}
                 className="px-6 py-3 bg-white/10 backdrop-blur-sm text-white font-medium rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300"
               >
                 Sign Up
@@ -215,7 +215,7 @@ export default function Home() {
                   </p>
                   <div className="mt-6 flex justify-end gap-4">
                     <button
-                      onClick={() => navigate('/signup')}
+                      onClick={() => navigate('/signin')}
                       className="px-4 py-2 bg-green-500 text-white rounded-md"
                     >
                       Sign Up
@@ -717,7 +717,7 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <button
-                onClick={() => navigate("/signup")}
+                onClick={() => navigate("/signin")}
                 className="px-8 py-4 bg-white text-[#2563EB] font-semibold rounded-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
               >
                 Get Started Now
