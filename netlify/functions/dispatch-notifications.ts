@@ -1,10 +1,28 @@
 import { timingSafeEqual } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Handler, HandlerEvent } from '@netlify/functions';
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 
 const MAX_ATTEMPTS = 3;
 const BATCH_SIZE = 20;
+const COMPANY_LOGO_FILENAME = 'buske-logistics-logo.jpg';
+const COMPANY_LOGO_CID = 'company-logo';
+
+const companyLogoPath = () => {
+  // The first path is where Netlify's function bundler places a statically
+  // referenced sibling asset. The second is retained for included_files
+  // bundles, whose working directory is the deployed project root.
+  const bundledSibling = fileURLToPath(new URL(`./assets/${COMPANY_LOGO_FILENAME}`, import.meta.url));
+  if (existsSync(bundledSibling)) return bundledSibling;
+
+  const includedFile = resolve(process.cwd(), 'netlify', 'functions', 'assets', COMPANY_LOGO_FILENAME);
+  if (existsSync(includedFile)) return includedFile;
+
+  throw new Error('Bundled company logo asset is unavailable');
+};
 
 type EventType =
   | 'shipment_published'
@@ -137,7 +155,6 @@ function renderEmail({
   appName,
   appUrl,
   supportUrl,
-  logoUrl,
 }: {
   event: NotificationEvent;
   shipment: Shipment;
@@ -145,7 +162,6 @@ function renderEmail({
   appName: string;
   appUrl: string;
   supportUrl: string;
-  logoUrl?: string;
 }) {
   const copy = eventCopy(event.event_type);
   const trackingUrl = `${appUrl.replace(/\/$/, '')}/track/${encodeURIComponent(shipment.id)}`;
@@ -181,9 +197,7 @@ function renderEmail({
   const payment = showPayment && shipment.cost !== null
     ? `<p style="margin:16px 0 0;color:#334155"><strong>Payment:</strong> ${escapeHtml(shipment.payment_status.replace(/\b\w/g, (value) => value.toUpperCase()))} · ${escapeHtml(shipment.currency)} ${escapeHtml(shipment.cost)}${recipient.role === 'admin' ? ` · payer: ${escapeHtml(shipment.payment_responsibility)}` : ''}</p>`
     : '';
-  const logo = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(appName)} logo" width="44" height="44" style="display:block;border:0;border-radius:8px;margin:0 auto 12px" />`
-    : '';
+  const logo = `<img src="cid:${COMPANY_LOGO_CID}" alt="Company Logo" width="180" style="display:block;border:0;width:180px;max-width:100%;height:auto;margin:0 auto 16px" />`;
   const shipmentDetails = [shipment.package_name, shipment.transportation].filter(Boolean).join(' · ');
   const text = `${appName}\n\nHello ${recipient.name || 'there'},\n\n${copy.heading}. ${intro}\n\nTracking ID: ${shipment.id}\nStatus: ${humanizeStatus(shipment)}\nShipment: ${[shipment.package_name, shipment.transportation].filter(Boolean).join(' / ')}\nOrigin: ${shipment.pickup_location || 'Not available'}\nDestination: ${shipment.delivery_address}${reason ? `\nUpdate: ${reason}` : ''}${previousReason ? `\nPrevious hold: ${previousReason}` : ''}${estimatedDeliveryAt ? `\nUpdated ETA: ${new Date(estimatedDeliveryAt).toLocaleString()}` : ''}${showPayment && shipment.cost !== null ? `\nPayment: ${shipment.payment_status} ${shipment.currency} ${shipment.cost}` : ''}\n\n${actionLabel}: ${actionUrl}\n\nNeed help? ${supportUrl}`;
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f1f5f9"><tr><td align="center" style="padding:28px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden"><tr><td style="background:#0f3a6d;padding:28px;text-align:center;color:#ffffff">${logo}<div style="font-size:20px;font-weight:700">${escapeHtml(appName)}</div></td></tr><tr><td style="padding:32px"><p style="margin:0 0 16px;font-size:16px">Hello ${escapeHtml(recipient.name || 'there')},</p><h1 style="margin:0 0 14px;font-size:24px;line-height:1.3">${escapeHtml(copy.heading)}</h1><p style="margin:0 0 24px;line-height:1.55;color:#475569">${escapeHtml(intro)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #dbeafe;border-radius:12px;background:#f8fbff"><tr><td style="padding:22px"><div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#475569;text-transform:uppercase">Tracking ID</div><div style="margin:6px 0 18px;font-family:monospace;font-size:22px;font-weight:700;word-break:break-all;color:#0f3a6d">${escapeHtml(shipment.id)}</div><p style="margin:0 0 8px"><strong>Status:</strong> ${escapeHtml(humanizeStatus(shipment))}</p>${shipmentDetails ? `<p style="margin:0 0 8px"><strong>Shipment:</strong> ${escapeHtml(shipmentDetails)}</p>` : ''}<p style="margin:0 0 8px"><strong>Origin:</strong> ${escapeHtml(shipment.pickup_location || 'Not available')}</p><p style="margin:0"><strong>Destination:</strong> ${escapeHtml(shipment.delivery_address)}</p>${reason ? `<p style="margin:16px 0 0;color:#334155"><strong>Update:</strong> ${escapeHtml(reason)}</p>` : ''}${previousReason ? `<p style="margin:16px 0 0;color:#334155"><strong>Previous hold:</strong> ${escapeHtml(previousReason)}</p>` : ''}${estimatedDeliveryAt ? `<p style="margin:16px 0 0;color:#334155"><strong>Updated ETA:</strong> ${escapeHtml(new Date(estimatedDeliveryAt).toLocaleString())}</p>` : ''}${payment}${adminDetails ? `<div style="margin-top:16px;color:#334155">${adminDetails}</div>` : ''}</td></tr></table><table role="presentation" cellspacing="0" cellpadding="0" style="margin:26px auto 8px"><tr><td style="border-radius:8px;background:#2563eb"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-weight:700">${escapeHtml(actionLabel)}</a></td></tr></table><p style="margin:22px 0 0;font-size:13px;line-height:1.5;color:#64748b">Need help? <a href="${escapeHtml(supportUrl)}" style="color:#2563eb">Contact support</a>.</p></td></tr><tr><td style="padding:22px 32px;background:#f8fafc;color:#64748b;font-size:12px;line-height:1.5">${escapeHtml(appName)} · <a href="${escapeHtml(appUrl)}" style="color:#2563eb">${escapeHtml(appUrl)}</a><br />This is an automated operational email. Please do not reply to this message.</td></tr></table></td></tr></table></body></html>`;
@@ -219,9 +233,7 @@ export const processNotificationEvents = async () => {
       (testRecipient && localAppUrl && process.env.CONTEXT !== 'production' ? localAppUrl : productionAppUrl);
     const supportUrl =
       process.env.SUPPORT_URL?.trim() || `${appUrl.replace(/\/$/, '')}/chat`;
-    const logoUrl =
-      process.env.LOGO_URL?.trim() ||
-      `${productionAppUrl.replace(/\/$/, '')}/buske-logo.jpeg`;
+    const logoAttachmentPath = companyLogoPath();
     const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST?.trim() || 'smtp.gmail.com',
@@ -277,7 +289,7 @@ export const processNotificationEvents = async () => {
       for (const delivery of deliveries || []) {
         const recipient = recipients.find((item) => item.email.toLowerCase() === delivery.recipient_email.toLowerCase());
         if (!recipient || delivery.attempt_count >= MAX_ATTEMPTS) continue;
-        const message = renderEmail({ event, shipment: shipment as Shipment, recipient, appName, appUrl, supportUrl, logoUrl });
+        const message = renderEmail({ event, shipment: shipment as Shipment, recipient, appName, appUrl, supportUrl });
         try {
           const target = testRecipient || recipient.email;
           const result = await transporter.sendMail({
@@ -286,6 +298,15 @@ export const processNotificationEvents = async () => {
             subject: testRecipient ? `[TEST] ${message.subject}` : message.subject,
             text: message.text,
             html: message.html,
+            attachments: [
+              {
+                filename: COMPANY_LOGO_FILENAME,
+                path: logoAttachmentPath,
+                cid: COMPANY_LOGO_CID,
+                contentType: 'image/jpeg',
+                contentDisposition: 'inline',
+              },
+            ],
           });
           await supabase.from('notification_deliveries').update({ delivery_status: 'sent', sent_at: new Date().toISOString(), provider_message_id: result.messageId || null, attempt_count: delivery.attempt_count + 1, error_summary: null }).eq('id', delivery.id);
           sent += 1;
