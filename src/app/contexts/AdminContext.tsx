@@ -310,14 +310,12 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           countdown_duration: (data.countdownDuration || 24) * 3600, // Convert hours to seconds for storage
           countdown_start_time: data.countdownStartTime || new Date().toISOString(),
           status: 'in_transit',
+          // A new record remains a draft until checkpoints have been written.
+          // Publication is the explicit UPDATE below that queues the outbox event.
+          is_published: false,
           current_checkpoint_index: 0, // Start at first checkpoint
           paused: false,
           stopped: false,
-          // Publish atomically on INSERT so the DB trigger queues the
-          // shipment_published notification event in the same transaction.
-          // When publish=false (Save Draft) no notification is sent.
-          is_published: publish,
-          published_at: publish ? new Date().toISOString() : null,
         };
 
         console.log('📝 Shipment Data to save:', shipmentData);
@@ -344,6 +342,17 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             throw new Error('Failed to create checkpoints: ' + checkpointError);
           }
           console.log('✅ Checkpoints created:', createdCheckpoints?.length || 0);
+        }
+
+        // The primary Create Shipment action creates an active shipment. This
+        // UPDATE triggers shipment_published only after all creation work has succeeded.
+        if (publish) {
+          const { error: publishError } = await shipmentService.updateShipment(newShipment.id, {
+            is_published: true,
+          });
+          if (publishError) {
+            throw new Error(`Shipment was created but could not be published: ${publishError}`);
+          }
         }
 
         // Refresh shipments

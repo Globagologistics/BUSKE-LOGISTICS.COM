@@ -207,16 +207,15 @@ export const processNotificationEvents = async () => {
     const smtpPassword = required('SMTP_APP_PASSWORD');
     const adminEmail = process.env.ADMIN_EMAIL?.trim() || 'buskelogistics141@gmail.com';
     const appName = process.env.APP_NAME?.trim() || 'Buske Logistics';
-    // APP_URL always remains the canonical customer site.
-    // Test-recipient redirection requires BOTH EMAIL_TEST_MODE=true AND
-    // EMAIL_TEST_RECIPIENT to be set.  Setting EMAIL_TEST_RECIPIENT alone
-    // (e.g. a leftover value from a previous test cycle) must never silently
-    // redirect real customer mail.
+    // APP_URL always remains the canonical customer site. A test recipient is
+    // inert unless an operator explicitly enables server-side test mode.
     const productionAppUrl = process.env.APP_URL?.trim() || 'https://buskelogistics.netlify.app';
-    const testModeActive =
-      (process.env.EMAIL_TEST_MODE || '').toLowerCase() === 'true' &&
-      Boolean(process.env.EMAIL_TEST_RECIPIENT?.trim());
-    const testRecipient = testModeActive ? process.env.EMAIL_TEST_RECIPIENT!.trim() : undefined;
+    const testModeActive = process.env.EMAIL_TEST_MODE?.trim().toLowerCase() === 'true';
+    const configuredTestRecipient = process.env.EMAIL_TEST_RECIPIENT?.trim();
+    if (testModeActive && !configuredTestRecipient) {
+      throw new Error('EMAIL_TEST_MODE requires EMAIL_TEST_RECIPIENT');
+    }
+    const testRecipient = testModeActive ? configuredTestRecipient : undefined;
     const localAppUrl = process.env.LOCAL_APP_URL?.trim();
     const appUrl =
       process.env.EMAIL_LINK_BASE_URL?.trim() ||
