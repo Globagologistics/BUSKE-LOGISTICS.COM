@@ -207,15 +207,20 @@ export const processNotificationEvents = async () => {
     const smtpPassword = required('SMTP_APP_PASSWORD');
     const adminEmail = process.env.ADMIN_EMAIL?.trim() || 'buskelogistics141@gmail.com';
     const appName = process.env.APP_NAME?.trim() || 'Buske Logistics';
-    // APP_URL always remains the canonical customer site. During a controlled
-    // test, EMAIL_TEST_RECIPIENT redirects all actual recipients to one
-    // mailbox while preserving the recipient role/template in the delivery log.
+    // APP_URL always remains the canonical customer site.
+    // Test-recipient redirection requires BOTH EMAIL_TEST_MODE=true AND
+    // EMAIL_TEST_RECIPIENT to be set.  Setting EMAIL_TEST_RECIPIENT alone
+    // (e.g. a leftover value from a previous test cycle) must never silently
+    // redirect real customer mail.
     const productionAppUrl = process.env.APP_URL?.trim() || 'https://buskelogistics.netlify.app';
-    const testRecipient = process.env.EMAIL_TEST_RECIPIENT?.trim();
+    const testModeActive =
+      (process.env.EMAIL_TEST_MODE || '').toLowerCase() === 'true' &&
+      Boolean(process.env.EMAIL_TEST_RECIPIENT?.trim());
+    const testRecipient = testModeActive ? process.env.EMAIL_TEST_RECIPIENT!.trim() : undefined;
     const localAppUrl = process.env.LOCAL_APP_URL?.trim();
     const appUrl =
       process.env.EMAIL_LINK_BASE_URL?.trim() ||
-      (testRecipient && localAppUrl && process.env.CONTEXT !== 'production' ? localAppUrl : productionAppUrl);
+      (testModeActive && localAppUrl ? localAppUrl : productionAppUrl);
     const supportUrl =
       process.env.SUPPORT_URL?.trim() || `${appUrl.replace(/\/$/, '')}/chat`;
     const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
@@ -275,11 +280,11 @@ export const processNotificationEvents = async () => {
         if (!recipient || delivery.attempt_count >= MAX_ATTEMPTS) continue;
         const message = renderEmail({ event, shipment: shipment as Shipment, recipient, appName, appUrl, supportUrl });
         try {
-          const target = testRecipient || recipient.email;
+          const target = testRecipient ?? recipient.email;
           const result = await transporter.sendMail({
             from: `${appName} <${smtpUser}>`,
             to: target,
-            subject: testRecipient ? `[TEST] ${message.subject}` : message.subject,
+            subject: testModeActive ? `[TEST] ${message.subject}` : message.subject,
             text: message.text,
             html: message.html,
             attachments: [

@@ -51,7 +51,7 @@ export interface Shipment {
 
 interface AdminContextType {
   shipments: Shipment[];
-  addShipment: (data: Partial<Shipment>) => Promise<void>;
+  addShipment: (data: Partial<Shipment>, publish?: boolean) => Promise<void>;
   updateShipment: (id: string, data: Partial<Shipment>) => Promise<void>;
   stopShipment: (id: string, reason: string) => Promise<void>;
   togglePause: (id: string) => Promise<void>;
@@ -246,7 +246,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 
   const addShipment = useCallback(
     async (
-      data: Partial<Shipment>
+      data: Partial<Shipment>,
+      publish: boolean = true
     ) => {
       try {
         setLoading(true);
@@ -312,6 +313,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           current_checkpoint_index: 0, // Start at first checkpoint
           paused: false,
           stopped: false,
+          // Publish atomically on INSERT so the DB trigger queues the
+          // shipment_published notification event in the same transaction.
+          // When publish=false (Save Draft) no notification is sent.
+          is_published: publish,
+          published_at: publish ? new Date().toISOString() : null,
         };
 
         console.log('📝 Shipment Data to save:', shipmentData);

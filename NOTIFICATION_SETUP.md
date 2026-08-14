@@ -72,8 +72,9 @@ They are server-only; none may be prefixed with `VITE_`.
 | `SUPPORT_URL` | The secure customer support route: `https://buskelogistics.netlify.app/chat`. |
 | `LOGO_URL` | `https://buskelogistics.netlify.app/buske-logo.jpeg` (the project logo, verified public). |
 | `LOCAL_APP_URL` | `http://localhost:5173`; used only for email tests redirected via `EMAIL_TEST_RECIPIENT`. |
-| `EMAIL_LINK_BASE_URL` | Optional staging/test CTA override; leave blank for normal production behavior. |
-| `EMAIL_TEST_RECIPIENT` | Optional safe test inbox; when present all email is redirected there and marked `[TEST]`. Remove before production. |
+| `EMAIL_LINK_BASE_URL` | Optional staging/test CTA override; leave blank for normal production behaviour. |
+| `EMAIL_TEST_MODE` | Set to `true` **only** during a controlled test run. **Both** this variable and `EMAIL_TEST_RECIPIENT` must be present for redirection to activate. |
+| `EMAIL_TEST_RECIPIENT` | The safe test inbox. Emails are redirected here only when `EMAIL_TEST_MODE=true`. Harmless if set without `EMAIL_TEST_MODE=true`. |
 
 `TRACKING_URL` is documented in `.env.example` for compatibility, but current
 email CTAs use the application's actual route format: `APP_URL/track/:id`.
@@ -100,11 +101,12 @@ route requires authenticated or token-verified participant access.
 
 ## Safe test procedure
 
-1. Set `EMAIL_TEST_RECIPIENT` to an inbox you control.
-2. Deploy the Netlify function and migration to a non-production environment.
-3. Create a shipment, open it in admin, and choose **Publish & notify**.
-4. Confirm the scheduled `dispatch-notifications` function sends only to the
-   test inbox and inspect `notification_events`/`notification_deliveries`.
-5. Exercise hold, resume, terminate, delivered, payment, and chat events.
-6. Remove `EMAIL_TEST_RECIPIENT` only after the expected rendering and recipient
-   behavior are verified.
+1. Set `EMAIL_TEST_MODE=true` **and** `EMAIL_TEST_RECIPIENT` to an inbox you control.
+2. Deploy the Netlify function and migration.
+3. Create a shipment and press **Create Shipment** (not Save Draft).
+   - The INSERT itself sets `is_published=true`; no second action is required.
+   - Confirm the `shipment_published` notification event appears in `notification_events`.
+4. Confirm emails arrive only at the test inbox (not at real customer addresses).
+5. Inspect `notification_events` / `notification_deliveries` for each lifecycle event.
+6. To end the test, set `EMAIL_TEST_MODE=false` (or remove it) in Netlify.
+   `EMAIL_TEST_RECIPIENT` may remain set; it is inert without `EMAIL_TEST_MODE=true`.

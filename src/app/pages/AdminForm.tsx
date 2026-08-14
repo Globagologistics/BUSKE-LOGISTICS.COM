@@ -58,9 +58,12 @@ export default function AdminForm() {
 
   const [formData, setFormData] = useState<any>(initialData);
   const [submittedTrackingId, setSubmittedTrackingId] = useState<string | null>(null);
+  const [submittedAsDraft, setSubmittedAsDraft] = useState(false);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Tracks which button the admin pressed: true = Create Shipment, false = Save Draft.
+  const publishIntentRef = React.useRef<boolean>(true);
   const selectedImageFiles: File[] = Array.isArray(formData.imageFiles) ? formData.imageFiles : [];
 
   useEffect(() => {
@@ -277,9 +280,11 @@ export default function AdminForm() {
         navigate('/admin');
       } else {
         console.log('Creating new shipment...');
-        await addShipment(data);
-        console.log('✓ Shipment created, setting tracking ID:', data.id);
+        const publish = publishIntentRef.current;
+        await addShipment(data, publish);
+        console.log('✓ Shipment created, publish=', publish, 'tracking ID:', data.id);
         clearError();
+        setSubmittedAsDraft(!publish);
         setSubmittedTrackingId(data.id);
       }
     } catch (error) {
@@ -311,8 +316,14 @@ export default function AdminForm() {
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
 
-          <h2 className="text-3xl font-bold text-[#0F1F3D] mb-2">Shipment Created!</h2>
-          <p className="text-gray-600 mb-6">Your tracking ID has been generated and is ready to share.</p>
+          <h2 className="text-3xl font-bold text-[#0F1F3D] mb-2">
+            {submittedAsDraft ? 'Draft Saved!' : 'Shipment Created!'}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {submittedAsDraft
+              ? 'The shipment has been saved as a draft. No notifications have been sent. Open the shipment in the dashboard to publish it when ready.'
+              : 'Your shipment is now active. Sender, receiver, and admin have been notified by email.'}
+          </p>
 
           <div className="bg-gray-50 border-2 border-[#2563EB] rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-600 mb-2">Tracking ID:</p>
@@ -860,18 +871,36 @@ export default function AdminForm() {
               >
                 Cancel
               </motion.button>
+              {!editing && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={isSubmitting}
+                  onClick={() => { publishIntentRef.current = false; }}
+                  className={`px-8 py-4 font-semibold rounded-lg transition-all duration-200 ${
+                    isSubmitting
+                      ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                      : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                  }`}
+                  title="Save without sending notifications"
+                >
+                  {isSubmitting ? '⏳ Saving...' : '📋 Save Draft'}
+                </motion.button>
+              )}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isSubmitting}
+                onClick={() => { publishIntentRef.current = true; }}
                 className={`px-8 py-4 font-semibold rounded-lg transition-all duration-200 ${
                   isSubmitting
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-[#2563EB] to-[#38BDF8] text-white hover:shadow-lg hover:shadow-blue-500/50'
                 }`}
               >
-                {isSubmitting ? '⏳ Processing...' : editing ? '💾 Save Changes' : '✅ Create Shipment'}
+                {isSubmitting ? '⏳ Processing...' : editing ? '💾 Save Changes' : '🚀 Create Shipment'}
               </motion.button>
             </div>
           </form>
