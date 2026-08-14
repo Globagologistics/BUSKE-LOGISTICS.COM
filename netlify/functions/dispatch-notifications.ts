@@ -1,30 +1,13 @@
 import { timingSafeEqual } from 'node:crypto';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { Handler, HandlerEvent } from '@netlify/functions';
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
+import { companyLogoContent } from './assets/company-logo.js';
 
 const MAX_ATTEMPTS = 3;
 const BATCH_SIZE = 20;
 const COMPANY_LOGO_FILENAME = 'buske-logistics-logo.jpg';
 const COMPANY_LOGO_CID = 'company-logo';
-
-const companyLogoPath = () => {
-  // Netlify may preserve included files either beside the compiled function,
-  // under the original repository path, or at the bundle root.
-  const candidates = [
-    fileURLToPath(new URL(`./assets/${COMPANY_LOGO_FILENAME}`, import.meta.url)),
-    resolve(process.cwd(), 'netlify', 'functions', 'assets', COMPANY_LOGO_FILENAME),
-    resolve(process.cwd(), 'assets', COMPANY_LOGO_FILENAME),
-    resolve(process.cwd(), COMPANY_LOGO_FILENAME),
-  ];
-  const bundledLogo = candidates.find(existsSync);
-  if (bundledLogo) return bundledLogo;
-
-  throw new Error('Bundled company logo asset is unavailable');
-};
 
 type EventType =
   | 'shipment_published'
@@ -235,7 +218,6 @@ export const processNotificationEvents = async () => {
       (testRecipient && localAppUrl && process.env.CONTEXT !== 'production' ? localAppUrl : productionAppUrl);
     const supportUrl =
       process.env.SUPPORT_URL?.trim() || `${appUrl.replace(/\/$/, '')}/chat`;
-    const logoAttachmentPath = companyLogoPath();
     const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST?.trim() || 'smtp.gmail.com',
@@ -303,7 +285,7 @@ export const processNotificationEvents = async () => {
             attachments: [
               {
                 filename: COMPANY_LOGO_FILENAME,
-                path: logoAttachmentPath,
+                content: companyLogoContent,
                 cid: COMPANY_LOGO_CID,
                 contentType: 'image/jpeg',
                 contentDisposition: 'inline',
