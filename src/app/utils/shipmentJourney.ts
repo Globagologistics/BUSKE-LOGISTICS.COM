@@ -125,7 +125,11 @@ export function getShipmentJourneyState(
     ?? asTime(shipment.created_at);
   const countdownDuration = Number(shipment.countdown_duration || 0) * 1000;
   const eta = asTime(shipment.estimated_delivery_at);
-  const totalDuration = countdownDuration > 0
+  // A delayed shipment's updated ETA is the authoritative revised timeline.
+  // Other lifecycle states retain the established countdown duration.
+  const totalDuration = status === "delayed" && start && eta && eta > start
+    ? eta - start
+    : countdownDuration > 0
     ? countdownDuration
     : start && eta && eta > start
     ? eta - start
