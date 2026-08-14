@@ -12,14 +12,16 @@ const COMPANY_LOGO_FILENAME = 'buske-logistics-logo.jpg';
 const COMPANY_LOGO_CID = 'company-logo';
 
 const companyLogoPath = () => {
-  // The first path is where Netlify's function bundler places a statically
-  // referenced sibling asset. The second is retained for included_files
-  // bundles, whose working directory is the deployed project root.
-  const bundledSibling = fileURLToPath(new URL(`./assets/${COMPANY_LOGO_FILENAME}`, import.meta.url));
-  if (existsSync(bundledSibling)) return bundledSibling;
-
-  const includedFile = resolve(process.cwd(), 'netlify', 'functions', 'assets', COMPANY_LOGO_FILENAME);
-  if (existsSync(includedFile)) return includedFile;
+  // Netlify may preserve included files either beside the compiled function,
+  // under the original repository path, or at the bundle root.
+  const candidates = [
+    fileURLToPath(new URL(`./assets/${COMPANY_LOGO_FILENAME}`, import.meta.url)),
+    resolve(process.cwd(), 'netlify', 'functions', 'assets', COMPANY_LOGO_FILENAME),
+    resolve(process.cwd(), 'assets', COMPANY_LOGO_FILENAME),
+    resolve(process.cwd(), COMPANY_LOGO_FILENAME),
+  ];
+  const bundledLogo = candidates.find(existsSync);
+  if (bundledLogo) return bundledLogo;
 
   throw new Error('Bundled company logo asset is unavailable');
 };
