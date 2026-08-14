@@ -5,6 +5,9 @@
 [functions]
   directory = "netlify/functions"
 
+[functions."notification-sweeper"]
+  schedule = "*/5 * * * *"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
