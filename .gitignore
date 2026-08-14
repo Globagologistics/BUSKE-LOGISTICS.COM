@@ -21,6 +21,8 @@ Thumbs.db
 
 # Supabase
 .supabase
+supabase/.temp/
+.supabase-remote-public.sql
 
 # VSCode
 .vscode
