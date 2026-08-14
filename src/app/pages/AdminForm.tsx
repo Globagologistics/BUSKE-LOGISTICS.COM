@@ -33,6 +33,9 @@ export default function AdminForm() {
     imageFiles: [],
     cost: editing?.cost?.toString() || '',
     paid: editing?.paid || false,
+    currency: editing?.currency || 'USD',
+    paymentStatus: editing?.paymentStatus || (editing?.paid ? 'paid' : 'unpaid'),
+    paymentResponsibility: editing?.paymentResponsibility || 'sender',
     vehiclesCount: editing?.vehiclesCount || '',
     vehicleType: editing?.vehicleType || '',
     driverName: editing?.driverName || '',
@@ -98,7 +101,7 @@ export default function AdminForm() {
   ) => {
     const { name, value, type, checked, files } = e.target as any;
     if (type === 'checkbox') {
-      setFormData((d: any) => ({ ...d, [name]: checked }));
+      setFormData((d: any) => ({ ...d, [name]: checked, ...(name === 'paid' ? { paymentStatus: checked ? 'paid' : 'unpaid' } : {}) }));
     } else if (type === 'file') {
       setFormData((d: any) => ({ ...d, [name]: files }));
     } else {
@@ -252,6 +255,9 @@ export default function AdminForm() {
       imageFiles,
       cost: parseFloat(formData.cost) || 0,
       paid: formData.paid,
+      currency: formData.currency,
+      paymentStatus: formData.paymentStatus,
+      paymentResponsibility: formData.paymentResponsibility,
       checkpoints: checkpointArr,
       vehiclesCount: formData.vehiclesCount ? parseInt(formData.vehiclesCount, 10) : undefined,
       vehicleType: formData.vehicleType,
@@ -542,7 +548,7 @@ export default function AdminForm() {
                   </div>
                   <div>
                     <label htmlFor="cost" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Shipping Cost ($) <span className="text-red-500">*</span>
+                      Shipping Cost <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="cost"
@@ -555,6 +561,24 @@ export default function AdminForm() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
                       aria-label="Enter shipment cost"
                     />
+                  </div>
+                  <div>
+                    <label htmlFor="currency" className="block text-sm font-semibold text-gray-700 mb-2">Currency</label>
+                    <select id="currency" name="currency" value={formData.currency} onChange={handleChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                      <option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="NGN">NGN</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="paymentResponsibility" className="block text-sm font-semibold text-gray-700 mb-2">Payment responsibility</label>
+                    <select id="paymentResponsibility" name="paymentResponsibility" value={formData.paymentResponsibility} onChange={handleChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                      <option value="sender">Sender</option><option value="receiver">Receiver</option><option value="company">Company</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="paymentStatus" className="block text-sm font-semibold text-gray-700 mb-2">Payment status</label>
+                    <select id="paymentStatus" name="paymentStatus" value={formData.paymentStatus} onChange={handleChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                      <option value="unpaid">Unpaid</option><option value="pending">Awaiting payment</option><option value="paid">Paid</option>
+                    </select>
                   </div>
                   <div>
                     <label htmlFor="countdownDuration" className="block text-sm font-semibold text-gray-700 mb-2">

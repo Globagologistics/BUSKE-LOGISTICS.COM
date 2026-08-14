@@ -68,11 +68,18 @@ export interface Shipment {
   // create customer notification events until is_published becomes true.
   is_published?: boolean;
   published_at?: string;
-  customer_status_reason?: string;
+  customer_status_reason?: string | null;
+  cancelled_at?: string | null;
+  delivered_at?: string | null;
+  estimated_delivery_at?: string | null;
+  internal_status_note?: string | null;
+  currency?: string;
+  payment_status?: 'unpaid' | 'pending' | 'paid';
+  payment_responsibility?: 'sender' | 'receiver' | 'company';
   
   // Tracking
   current_checkpoint_index: number;
-  status: 'in_transit' | 'paused' | 'stopped' | 'delivered';
+  status: 'processing' | 'pickup_scheduled' | 'picked_up' | 'in_transit' | 'customs_processing' | 'on_hold' | 'delayed' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'returned' | 'paused' | 'stopped';
   
   created_at: string;
   updated_at: string;

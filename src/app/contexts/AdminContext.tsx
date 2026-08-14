@@ -26,6 +26,9 @@ export interface Shipment {
   imageFiles?: File[];
   cost?: number;
   paid: boolean;
+  currency?: string;
+  paymentStatus?: 'unpaid' | 'pending' | 'paid';
+  paymentResponsibility?: 'sender' | 'receiver' | 'company';
   checkpoints: Checkpoint[];
   currentCheckpointIndex: number;
   vehiclesCount?: number;
@@ -181,6 +184,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
+            currency: ship.currency,
+            paymentStatus: ship.payment_status,
+            paymentResponsibility: ship.payment_responsibility,
             vehiclesCount: ship.vehicles_count,
             vehicleType: ship.vehicle_type,
             driverName: ship.driver_name,
@@ -292,6 +298,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           images: imageUrls,
           cost: data.cost || 0,
           paid: data.paid || false,
+          currency: data.currency || 'USD',
+          payment_status: data.paymentStatus || (data.paid ? 'paid' : 'unpaid'),
+          payment_responsibility: data.paymentResponsibility || 'sender',
           vehicles_count: data.vehiclesCount || 0, // Fixed: was vehicle_count
           vehicle_type: data.vehicleType || '',
           driver_name: data.driverName || '',
@@ -355,6 +364,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
+            currency: ship.currency,
+            paymentStatus: ship.payment_status,
+            paymentResponsibility: ship.payment_responsibility,
             vehiclesCount: ship.vehicles_count,
             vehicleType: ship.vehicle_type,
             driverName: ship.driver_name,
@@ -423,6 +435,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         if (data.images !== undefined || data.imageFiles !== undefined) updateData.images = imageUrls;
         if (data.cost !== undefined) updateData.cost = data.cost;
         if (data.paid !== undefined) updateData.paid = data.paid;
+        if (data.currency !== undefined) updateData.currency = data.currency;
+        if (data.paymentStatus !== undefined) updateData.payment_status = data.paymentStatus;
+        if (data.paymentResponsibility !== undefined) updateData.payment_responsibility = data.paymentResponsibility;
         if (data.vehiclesCount !== undefined) updateData.vehicles_count = data.vehiclesCount;
         if (data.vehicleType !== undefined) updateData.vehicle_type = data.vehicleType;
         if (data.driverName !== undefined) updateData.driver_name = data.driverName;
@@ -454,6 +469,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
+            currency: ship.currency,
+            paymentStatus: ship.payment_status,
+            paymentResponsibility: ship.payment_responsibility,
             vehiclesCount: ship.vehicles_count,
             vehicleType: ship.vehicle_type,
             driverName: ship.driver_name,
@@ -514,6 +532,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
+            currency: ship.currency,
+            paymentStatus: ship.payment_status,
+            paymentResponsibility: ship.payment_responsibility,
             vehiclesCount: ship.vehicles_count,
             vehicleType: ship.vehicle_type,
             driverName: ship.driver_name,
@@ -600,6 +621,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
+            currency: ship.currency,
+            paymentStatus: ship.payment_status,
+            paymentResponsibility: ship.payment_responsibility,
             vehiclesCount: ship.vehicles_count,
             vehicleType: ship.vehicle_type,
             driverName: ship.driver_name,
@@ -654,6 +678,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
             images: (ship.images || []).map((i: string) => resolveStorageUrl(i, 'shipment-images')),
             cost: ship.cost,
             paid: ship.paid,
+            currency: ship.currency,
+            paymentStatus: ship.payment_status,
+            paymentResponsibility: ship.payment_responsibility,
             vehiclesCount: ship.vehicles_count,
             vehicleType: ship.vehicle_type,
             driverName: ship.driver_name,

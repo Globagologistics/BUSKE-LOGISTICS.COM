@@ -24,6 +24,7 @@ export interface ChatMessage {
 export interface ChatThreadSummary {
   id: string;
   trackingId: string;
+  participantRole?: 'sender' | 'receiver';
   lastMessageAt?: number;
   lastMessagePreview?: string | null;
   unreadForAdmin: number;

@@ -16,6 +16,7 @@ import Admin from "./pages/Admin";
 import AdminForm from "./pages/AdminForm";
 import AdminDetail from "./pages/AdminDetail";
 import AdminChat from "./pages/AdminChat";
+import AdminNotifications from "./pages/AdminNotifications";
 import AdminLayout from "./pages/AdminLayout";
 
 export const router = createBrowserRouter([
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, Component: Admin },
               { path: "chat", Component: AdminChat },
+              { path: "notifications", Component: AdminNotifications },
               { path: "new", Component: AdminForm },
               { path: "edit/:id", Component: AdminForm },
               { path: "view/:id", Component: AdminDetail },

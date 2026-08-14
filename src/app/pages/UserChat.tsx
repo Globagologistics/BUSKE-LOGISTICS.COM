@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function UserChat() {
   const [trackingIdInput, setTrackingIdInput] = useState("");
-  const [activeTrackingId, setActiveTrackingId] = useState<string | null>(null);
+  const [activeThread, setActiveThread] = useState<{ id: string; trackingId: string } | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [alertNotice, setAlertNotice] = useState<string | null>(null);
@@ -59,11 +59,11 @@ export default function UserChat() {
         const thread = await ensureChatThread(submittedId);
         if (!active) return;
         if (!thread) {
-          setActiveTrackingId(null);
+          setActiveThread(null);
           setValidationError("You are not authorized to access this consignment conversation.");
           return;
         }
-        setActiveTrackingId(submittedId);
+        setActiveThread({ id: thread.id, trackingId: submittedId });
         setValidationError(null);
         setAlertNotice("Tracking ID verified");
       };
@@ -75,7 +75,7 @@ export default function UserChat() {
       };
     }
 
-    setActiveTrackingId(null);
+    setActiveThread(null);
     setValidationError(error || "Tracking ID not found. Please check and try again.");
   }, [submittedId, loading, shipment, error]);
 
@@ -96,7 +96,7 @@ export default function UserChat() {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(3,7,18,0.98)_0%,rgba(3,7,18,0.9)_45%,rgba(3,7,18,0.5)_70%,rgba(3,7,18,0)_90%)]" />
 
       <div className="relative z-10 flex h-full w-full flex-col">
-        {!activeTrackingId ? (
+        {!activeThread ? (
           <div className="flex h-full items-center justify-center px-6">
             <div className="w-full max-w-md rounded-3xl border border-white/15 bg-white/10 p-8 text-center shadow-2xl backdrop-blur-2xl">
               <h1 className="text-3xl font-black tracking-tighter">
@@ -136,7 +136,8 @@ export default function UserChat() {
           </div>
         ) : (
           <ChatThread
-            trackingId={activeTrackingId}
+            trackingId={activeThread.trackingId}
+            threadId={activeThread.id}
             role="user"
             title="Shipment Command Line"
             subtitle="Live tracking support"

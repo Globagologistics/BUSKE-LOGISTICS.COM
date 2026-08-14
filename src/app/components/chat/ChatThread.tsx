@@ -6,6 +6,7 @@ import { cn } from "../ui/utils";
 
 interface ChatThreadProps {
   trackingId: string;
+  threadId: string;
   role: ChatRole;
   title: string;
   subtitle?: string;
@@ -71,6 +72,7 @@ function TypedText({
 
 export function ChatThread({
   trackingId,
+  threadId,
   role,
   title,
   subtitle,
@@ -81,7 +83,7 @@ export function ChatThread({
   statusTone = "info",
   agentTypingLabel,
 }: ChatThreadProps) {
-  const { messages, loading } = useChatMessages(trackingId);
+  const { messages, loading } = useChatMessages(trackingId, threadId);
   const [draft, setDraft] = useState("");
   const [pendingMedia, setPendingMedia] = useState<PendingAttachment[]>([]);
   const [sending, setSending] = useState(false);
@@ -93,8 +95,8 @@ export function ChatThread({
 
   useEffect(() => {
     if (!trackingId) return;
-    markThreadRead(trackingId, role);
-  }, [trackingId, role, messages.length]);
+    markThreadRead(threadId, role);
+  }, [threadId, role, messages.length]);
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -118,6 +120,7 @@ export function ChatThread({
     setSending(true);
     await sendChatMessage({
       trackingId,
+      threadId,
       sender: role,
       text,
       mediaFiles: pendingMedia.map((item) => item.file),

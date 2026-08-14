@@ -13,21 +13,21 @@ export default function AdminChat() {
     );
   }, [threads]);
 
-  const [selectedTrackingId, setSelectedTrackingId] = useState<string | null>(
-    sortedThreads[0]?.trackingId ?? null
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
+    sortedThreads[0]?.id ?? null
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (selectedTrackingId) return;
+    if (selectedThreadId) return;
     if (sortedThreads[0]) {
-      setSelectedTrackingId(sortedThreads[0].trackingId);
+      setSelectedThreadId(sortedThreads[0].id);
     }
-  }, [sortedThreads, selectedTrackingId]);
+  }, [sortedThreads, selectedThreadId]);
 
-  const handleSelect = (trackingId: string) => {
-    setSelectedTrackingId(trackingId);
-    markThreadRead(trackingId, "admin");
+  const handleSelect = (threadId: string) => {
+    setSelectedThreadId(threadId);
+    markThreadRead(threadId, "admin");
     setSidebarOpen(false);
   };
 
@@ -60,13 +60,13 @@ export default function AdminChat() {
                 {sortedThreads.map((thread) => {
                   const snippet =
                     thread.lastMessagePreview || "No messages yet";
-                  const isActive = thread.trackingId === selectedTrackingId;
+                  const isActive = thread.id === selectedThreadId;
 
                   return (
                     <button
-                      key={thread.trackingId}
+                      key={thread.id}
                       type="button"
-                      onClick={() => handleSelect(thread.trackingId)}
+                      onClick={() => handleSelect(thread.id)}
                       className={cn(
                         "w-full rounded-2xl border px-4 py-3 text-left transition",
                         isActive
@@ -115,9 +115,10 @@ export default function AdminChat() {
             </div>
           </div>
 
-          {selectedTrackingId ? (
+          {selectedThreadId ? (
             <ChatThread
-              trackingId={selectedTrackingId}
+              trackingId={sortedThreads.find((thread) => thread.id === selectedThreadId)?.trackingId || ''}
+              threadId={selectedThreadId}
               role="admin"
               title="Admin Command Center"
               subtitle="Live shipment support"
@@ -186,9 +187,9 @@ export default function AdminChat() {
 
               return (
                 <button
-                  key={thread.trackingId}
+                  key={thread.id}
                   type="button"
-                  onClick={() => handleSelect(thread.trackingId)}
+                  onClick={() => handleSelect(thread.id)}
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left hover:bg-white/10"
                 >
                   <div className="flex items-center justify-between gap-2">

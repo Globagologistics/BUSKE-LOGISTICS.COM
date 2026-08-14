@@ -6,6 +6,7 @@ import type { ChatMessage, ChatRole, ChatThreadSummary, MediaAttachment } from "
 type ChatThreadRow = {
   id: string;
   tracking_id: string;
+  participant_role: 'sender' | 'receiver';
   last_message_at: string | null;
   last_message_preview: string | null;
   unread_for_admin: number | null;
@@ -33,6 +34,7 @@ const CHAT_MEDIA_BUCKET = "chat-media";
 const toThreadSummary = (row: ChatThreadRow): ChatThreadSummary => ({
   id: row.id,
   trackingId: row.tracking_id,
+  participantRole: row.participant_role,
   lastMessageAt: row.last_message_at
     ? new Date(row.last_message_at).getTime()
     : undefined,
@@ -103,9 +105,27 @@ export async function ensureChatThread(trackingId: string): Promise<ChatThreadSu
   const trimmed = trackingId.trim();
   if (!trimmed) return null;
 
+  const { data: authData } = await supabase.auth.getUser();
+  const email = authData.user?.email?.trim().toLowerCase();
+  if (!email) return null;
+
+  const { data: shipment, error: shipmentError } = await supabase
+    .from('shipments')
+    .select('sender_email, receiver_email')
+    .eq('id', trimmed)
+    .single();
+  if (shipmentError || !shipment) return null;
+
+  const participantRole = email === String(shipment.sender_email || '').trim().toLowerCase()
+    ? 'sender'
+    : email === String(shipment.receiver_email || '').trim().toLowerCase()
+      ? 'receiver'
+      : null;
+  if (!participantRole) return null;
+
   const { data, error } = await supabase
     .from("chat_threads")
-    .upsert({ tracking_id: trimmed }, { onConflict: "tracking_id" })
+    .upsert({ tracking_id: trimmed, participant_role: participantRole }, { onConflict: "tracking_id,participant_role" })
     .select("*")
     .single();
 
@@ -117,26 +137,17 @@ export async function ensureChatThread(trackingId: string): Promise<ChatThreadSu
   return toThreadSummary(data as ChatThreadRow);
 }
 
-const ensureThreadRow = async (trackingId: string): Promise<ChatThreadRow | null> => {
+const ensureThreadRow = async (trackingId: string): Promise<Pick<ChatThreadRow, 'id' | 'tracking_id'> | null> => {
   const trimmed = trackingId.trim();
   if (!trimmed) return null;
 
-  const { data, error } = await supabase
-    .from("chat_threads")
-    .upsert({ tracking_id: trimmed }, { onConflict: "tracking_id" })
-    .select("*")
-    .single();
-
-  if (error) {
-    console.error("Failed to ensure chat thread:", error);
-    return null;
-  }
-
-  return data as ChatThreadRow;
+  const thread = await ensureChatThread(trimmed);
+  return thread ? { id: thread.id, tracking_id: thread.trackingId } : null;
 };
 
 export async function sendChatMessage(payload: {
   trackingId: string;
+  threadId?: string;
   sender: ChatRole;
   text?: string;
   senderName?: string;
@@ -149,7 +160,9 @@ export async function sendChatMessage(payload: {
   const trimmed = payload.trackingId.trim();
   if (!trimmed) return { data: null, error: "Missing tracking ID" };
 
-  const thread = await ensureThreadRow(trimmed);
+  const thread = payload.threadId
+    ? { id: payload.threadId, tracking_id: trimmed }
+    : await ensureThreadRow(trimmed);
   if (!thread) {
     return { data: null, error: "Failed to create chat thread" };
   }
@@ -190,8 +203,8 @@ export async function sendChatMessage(payload: {
   return { data: toMessage(data as ChatMessageRow), error: null };
 }
 
-export async function markThreadRead(trackingId: string, role: ChatRole) {
-  const trimmed = trackingId.trim();
+export async function markThreadRead(threadId: string, role: ChatRole) {
+  const trimmed = threadId.trim();
   if (!trimmed) return;
 
   const updates =
@@ -200,7 +213,7 @@ export async function markThreadRead(trackingId: string, role: ChatRole) {
   const { error } = await supabase
     .from("chat_threads")
     .update(updates)
-    .eq("tracking_id", trimmed);
+    .eq("id", trimmed);
 
   if (error) {
     console.error("Failed to mark thread read:", error);
@@ -253,7 +266,7 @@ export function useChatThreads() {
   return { threads, loading, refresh: fetchThreads };
 }
 
-export function useChatMessages(trackingId: string) {
+export function useChatMessages(trackingId: string, threadId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -269,12 +282,18 @@ export function useChatMessages(trackingId: string) {
       }
 
       setLoading(true);
-      await ensureChatThread(trimmed);
+      const resolvedThread = threadId ? null : await ensureChatThread(trimmed);
+      const activeThreadId = threadId || resolvedThread?.id;
+      if (!activeThreadId) {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("chat_messages")
         .select("*")
-        .eq("tracking_id", trimmed)
+        .eq("thread_id", activeThreadId)
         .order("created_at", { ascending: true });
 
       if (!active) return;
@@ -296,15 +315,17 @@ export function useChatMessages(trackingId: string) {
     const trimmed = trackingId.trim();
     if (!trimmed) return () => {};
 
+    const activeThreadId = threadId;
+    if (!activeThreadId) return () => {};
     const channel = supabase
-      .channel(`chat-messages-${trimmed}`)
+      .channel(`chat-messages-${activeThreadId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "chat_messages",
-          filter: `tracking_id=eq.${trimmed}`,
+          filter: `thread_id=eq.${activeThreadId}`,
         },
         (payload: RealtimePostgresChangesPayload<ChatMessageRow>) => {
           const newRow = payload.new as ChatMessageRow;
@@ -336,7 +357,7 @@ export function useChatMessages(trackingId: string) {
       active = false;
       channel.unsubscribe();
     };
-  }, [trackingId]);
+  }, [trackingId, threadId]);
 
   const sortedMessages = useMemo(
     () => [...messages].sort((a, b) => a.createdAt - b.createdAt),

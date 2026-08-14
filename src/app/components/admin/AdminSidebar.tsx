@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, PlusCircle, MessageCircle } from "lucide-react";
+import { LayoutDashboard, PlusCircle, MessageCircle, Mail } from "lucide-react";
 
 type AdminSidebarProps = {
   onNavigate?: () => void;
@@ -22,6 +22,11 @@ const navItems = [
     label: "Admin Chat",
     to: "/admin/chat",
     icon: MessageCircle,
+  },
+  {
+    label: "Notifications",
+    to: "/admin/notifications",
+    icon: Mail,
   },
 ];
 
