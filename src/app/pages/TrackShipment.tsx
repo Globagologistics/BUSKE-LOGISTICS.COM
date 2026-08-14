@@ -14,23 +14,10 @@ import ShipmentProgressBar from "../components/ShipmentProgressBar";
 import { Badge } from "../components/ui/badge";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "../components/ui/carousel";
 import { calculateCheckpointTimes, isFlightShipment } from "../utils/trackingUtils";
+import { formatJourneyStatus, getShipmentJourneyState } from "../utils/shipmentJourney";
 import { StarRating } from "../components/StarRating";
 import { useShipmentWithCheckpoints } from "../../hooks/useSupabase";
-
-// Calculate countdown progress (returns elapsed percentage 0-100)
-// durationHours should be the number of hours the countdown is set for.
-const calculateCountdownProgress = (startTime: string, durationHours: number): number => {
-  const start = new Date(startTime).getTime();
-  const now = Date.now();
-  const elapsed = now - start;
-  const totalDuration = durationHours * 3600 * 1000; // convert hours to ms
-
-  if (elapsed <= 0) return 0;
-  if (elapsed >= totalDuration) return 100;
-
-  // Return elapsed percentage (0 to 100)
-  return Math.round((elapsed / totalDuration) * 100);
-};
+import type { EmblaCarouselType } from "embla-carousel";
 
 // Format remaining countdown time (duration is provided in hours)
 const formatCountdownTime = (startTime: string, durationHours: number): string => {
@@ -61,14 +48,10 @@ export default function TrackShipment() {
   const routeTrackingId = id ?? searchParams.get("id") ?? "";
   const [trackingId, setTrackingId] = useState(routeTrackingId);
   const [shipmentData, setShipmentData] = useState<any>(null);
-  const [updateTrigger, setUpdateTrigger] = useState(0); // Force re-render every second
+  const [updateTrigger, setUpdateTrigger] = useState(0);
   const [routeMapLoading, setRouteMapLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string | null>(null);
-  const [productCarouselApi, setProductCarouselApi] = useState<{
-    scrollNext: () => void;
-    scrollTo: (index: number) => void;
-    canScrollNext: () => boolean;
-  } | null>(null);
+  const [productCarouselApi, setProductCarouselApi] = useState<EmblaCarouselType | undefined>(undefined);
 
   // Fetch shipment from Supabase with real-time updates
   const { shipment, loading, error } = useShipmentWithCheckpoints(trackingId || '');
@@ -82,24 +65,20 @@ export default function TrackShipment() {
     setTrackingId(routeTrackingId);
   }, [routeTrackingId]);
 
-  // Update tracking display - every second if countdown timer exists
+  // Recalculate timestamp-derived progress occasionally; decorative motion stays in CSS.
   useEffect(() => {
     if (
       !shipmentData?.countdownDuration ||
-      shipmentData?.stopped ||
-      shipmentData?.paused ||
-      shipmentData?.terminated
+      !shipmentData?.isJourneyMoving
     )
       return;
     const interval = setInterval(() => {
       setUpdateTrigger((prev) => prev + 1);
-    }, 1000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [
     shipmentData?.countdownDuration,
-    shipmentData?.stopped,
-    shipmentData?.paused,
-    shipmentData?.terminated,
+    shipmentData?.isJourneyMoving,
   ]);
 
   useEffect(() => {
@@ -124,60 +103,21 @@ export default function TrackShipment() {
     const isFlightShip = isFlightShipment(transportValue);
     const enhancedCheckpoints = calculateCheckpointTimes(
       found.checkpoints || [],
-      null,
-      null,
+      '',
+      '',
       isFlightShip
     );
 
-    // Calculate progress based on countdown timer if available
-    let progress = 0;
+    // The shared controller derives durable position from stored timestamps.
+    // CSS handles visual movement independently of this value.
+    const journey = getShipmentJourneyState(found);
+    const progress = journey.progress;
     const hours = found.countdown_duration ? found.countdown_duration / 3600 : 0;
-    const isStopped = Boolean(found.stopped || found.terminated);
-    if (hours > 0 && found.countdown_start_time && !found.paused && !isStopped) {
-      progress = calculateCountdownProgress(found.countdown_start_time, hours);
-      console.log('⏱️ Countdown Progress calculated:', {
-        startTime: found.countdown_start_time,
-        durationHours: hours,
-        progressPercent: progress,
-        remaining: formatCountdownTime(found.countdown_start_time, hours),
-      });
-    } else if (found.paused) {
-      // If paused, freeze progress at pause time if provided
-      if (found.pause_timestamp) {
-        const startMs = new Date(found.countdown_start_time).getTime();
-        const asOf = new Date(found.pause_timestamp).getTime();
-        const elapsed = asOf - startMs;
-        const totalMs = hours * 3600 * 1000;
-        if (elapsed <= 0) progress = 0;
-        else if (elapsed >= totalMs) progress = 100;
-        else progress = Math.round((elapsed / totalMs) * 100);
-      } else {
-        progress = calculateCountdownProgress(found.countdown_start_time, hours);
-      }
-    } else if (isStopped) {
-      // When stopped, freeze progress at stop time if provided
-      const freezeTimestamp = found.stop_timestamp || found.terminate_timestamp;
-      if (freezeTimestamp) {
-        const startMs = new Date(found.countdown_start_time).getTime();
-        const asOf = new Date(freezeTimestamp).getTime();
-        const elapsed = asOf - startMs;
-        const totalMs = hours * 3600 * 1000;
-        if (elapsed <= 0) progress = 0;
-        else if (elapsed >= totalMs) progress = 100;
-        else progress = Math.round((elapsed / totalMs) * 100);
-      } else {
-        progress = calculateCountdownProgress(found.countdown_start_time, hours);
-      }
-    }
-
     setShipmentData({
       ...found,
       trackingId: found.id,
-      status: isStopped
-        ? 'Stopped'
-        : found.paused
-        ? 'Paused'
-        : 'In Transit',
+      status: formatJourneyStatus(journey.status),
+      journeyStatus: journey.status,
       stopReason: found.stop_reason || '',
       progress,
       transportMode: transportValue,
@@ -228,7 +168,9 @@ export default function TrackShipment() {
       countdownStartTime: found.countdown_start_time,
       paused: found.paused,
       stopped: found.stopped,
-      progressBarPaused: found.progress_bar_paused || false,
+      progressBarPaused: Boolean(found.progress_bar_paused || journey.isFrozen),
+      isJourneyMoving: journey.isMoving && !found.progress_bar_paused,
+      customerStatusReason: found.customer_status_reason || found.stop_reason || '',
     });
     console.log('📦 Shipment data updated, progress:', progress);
   };
@@ -265,7 +207,7 @@ export default function TrackShipment() {
     return "Driver";
   };
 
-  const isStopped = shipmentData?.status === 'Stopped';
+  const isStopped = ['On Hold', 'Paused', 'Stopped', 'Terminated', 'Cancelled'].includes(shipmentData?.status || '');
   const statusCardBg =
     "https://www.shutterstock.com/image-illustration/ochre-orange-rich-yellow-brown-600nw-2094111343.jpg";
   const defaultRouteMapImage =
@@ -398,9 +340,9 @@ export default function TrackShipment() {
                   </div>
                 </div>
 
-                {shipmentData.status === 'Stopped' && (
+                {shipmentData.customerStatusReason && (
                   <div className="mb-6 p-4 bg-red-500/15 border border-red-300/40 rounded-lg flex flex-col items-center">
-                    <p className="text-red-200 font-semibold mb-3">This shipment has been stopped.</p>
+                    <p className="text-red-200 font-semibold mb-3">{shipmentData.customerStatusReason}</p>
                     <button
                       type="button"
                       onClick={() => navigate("/chat")}
@@ -418,8 +360,9 @@ export default function TrackShipment() {
                     transportMode={shipmentData.transportMode}
                     checkpoints={shipmentData.checkpoints}
                     status={shipmentData.status}
-                    vehiclesCount={shipmentData.vehiclesCount || 1}
                     isVisuallyPaused={shipmentData.progressBarPaused}
+                    origin={shipmentData.origin}
+                    destination={shipmentData.destination}
                   />
                   {/* Countdown Timer Display */}
                   {shipmentData.countdownDuration && shipmentData.countdownStartTime && (
@@ -452,7 +395,7 @@ export default function TrackShipment() {
                     <Carousel
                       className="w-full"
                       opts={{ align: "start", loop: true }}
-                      setApi={setProductCarouselApi}
+                      setApi={(api) => setProductCarouselApi(api)}
                     >
                       <CarouselContent>
                         {shipmentData.images.map((imageUrl: string, index: number) => (

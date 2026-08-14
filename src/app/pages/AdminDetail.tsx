@@ -220,14 +220,27 @@ export default function AdminDetail() {
   const handleResume = async () => {
     setIsSaving(true);
     try {
-      await shipmentService.updateShipment(shipment.id, {
+      const updates: Record<string, unknown> = {
         stopped: false,
         stop_reason: undefined,
         stop_timestamp: null,
         paused: false,
         status: 'in_transit',
         customer_status_reason: null,
-      } as any);
+      };
+
+      // Keep countdown-driven tracking progress frozen for the full hold.
+      // This mirrors the existing pause/resume behavior and prevents a visual
+      // jump forward when a stopped shipment is released.
+      if (shipment.stop_timestamp && shipment.countdown_start_time) {
+        const heldFor = Date.now() - new Date(shipment.stop_timestamp).getTime();
+        const countdownStart = new Date(shipment.countdown_start_time).getTime();
+        if (Number.isFinite(heldFor) && heldFor > 0 && Number.isFinite(countdownStart)) {
+          updates.countdown_start_time = new Date(countdownStart + heldFor).toISOString();
+        }
+      }
+
+      await shipmentService.updateShipment(shipment.id, updates as any);
     } catch (error) {
       console.error('Error resuming shipment:', error);
     } finally {
