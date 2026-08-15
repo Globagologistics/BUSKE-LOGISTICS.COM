@@ -87,8 +87,9 @@ export function ChatThread({
   const [draft, setDraft] = useState("");
   const [pendingMedia, setPendingMedia] = useState<PendingAttachment[]>([]);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
   const adminAvatarUrl =
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwdV07RyApr_mVZOJRk3Rht0P98deLiSYB0Q&s";
@@ -113,18 +114,40 @@ export function ChatThread({
     return () => window.removeEventListener("keydown", handleKey);
   }, [activeImageUrl]);
 
+  const isTouchInput =
+    typeof window !== "undefined" &&
+    (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768);
+
+  const resizeComposer = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 144)}px`;
+  };
+
+  useEffect(() => {
+    resizeComposer();
+  }, [draft]);
+
   const handleSend = async () => {
     const text = draft.trim();
     if (!text && pendingMedia.length === 0) return;
 
     setSending(true);
-    await sendChatMessage({
+    setSendError(null);
+    const { error } = await sendChatMessage({
       trackingId,
       threadId,
       sender: role,
       text,
       mediaFiles: pendingMedia.map((item) => item.file),
     });
+
+    if (error) {
+      setSendError("Message could not be sent. Please try again.");
+      setSending(false);
+      return;
+    }
 
     setDraft("");
     pendingMedia.forEach((item) => URL.revokeObjectURL(item.previewUrl));
@@ -250,7 +273,7 @@ export function ChatThread({
                           : "rounded-bl-2xl border border-white/15 bg-white/10 text-white/85 backdrop-blur-xl shadow-[0_12px_24px_rgba(15,23,42,0.2)]"
                       )}
                     >
-                      <p className="leading-relaxed">
+                      <p className="whitespace-pre-wrap break-words leading-relaxed">
                         {message.animateTyping ? (
                           <TypedText
                             text={message.text}
@@ -349,10 +372,14 @@ export function ChatThread({
             Typing...
           </div>
         )}
+        {sendError && (
+          <div className="mb-2 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-100">
+            {sendError}
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <label className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 transition hover:bg-white/10">
             <input
-              ref={inputRef}
               type="file"
               accept="image/*,video/*"
               multiple
@@ -367,17 +394,22 @@ export function ChatThread({
             <Paperclip className="h-5 w-5" />
           </label>
           <textarea
+            ref={inputRef}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setSendError(null);
+            }}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
+              if (event.key === "Enter" && !event.shiftKey && !isTouchInput) {
                 event.preventDefault();
-                handleSend();
+                void handleSend();
               }
             }}
             rows={1}
             placeholder="Type a message..."
-            className="h-11 flex-1 resize-none rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 placeholder:text-white/40 focus:border-white/30 focus:outline-none"
+            enterKeyHint={isTouchInput ? "enter" : "send"}
+            className="min-h-11 max-h-36 flex-1 resize-none overflow-y-auto rounded-3xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm leading-6 text-white/90 placeholder:text-white/40 focus:border-white/30 focus:outline-none"
           />
           <button
             type="button"

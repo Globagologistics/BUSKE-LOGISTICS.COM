@@ -105,28 +105,8 @@ export async function ensureChatThread(trackingId: string): Promise<ChatThreadSu
   const trimmed = trackingId.trim();
   if (!trimmed) return null;
 
-  const { data: authData } = await supabase.auth.getUser();
-  const email = authData.user?.email?.trim().toLowerCase();
-  if (!email) return null;
-
-  const { data: shipment, error: shipmentError } = await supabase
-    .from('shipments')
-    .select('sender_email, receiver_email')
-    .eq('id', trimmed)
-    .single();
-  if (shipmentError || !shipment) return null;
-
-  const participantRole = email === String(shipment.sender_email || '').trim().toLowerCase()
-    ? 'sender'
-    : email === String(shipment.receiver_email || '').trim().toLowerCase()
-      ? 'receiver'
-      : null;
-  if (!participantRole) return null;
-
   const { data, error } = await supabase
-    .from("chat_threads")
-    .upsert({ tracking_id: trimmed, participant_role: participantRole }, { onConflict: "tracking_id,participant_role" })
-    .select("*")
+    .rpc("ensure_chat_thread", { p_tracking_id: trimmed })
     .single();
 
   if (error) {

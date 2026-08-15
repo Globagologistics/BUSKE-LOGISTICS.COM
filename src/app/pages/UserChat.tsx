@@ -1,20 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { ChatThread } from "../components/chat/ChatThread";
 import { ensureChatThread } from "../../hooks/useChat";
-import { useShipmentWithCheckpoints } from "../../hooks/useSupabase";
 import { supabase } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
 
 export default function UserChat() {
   const [trackingIdInput, setTrackingIdInput] = useState("");
   const [activeThread, setActiveThread] = useState<{ id: string; trackingId: string } | null>(null);
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [alertNotice, setAlertNotice] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [opening, setOpening] = useState(false);
   const navigate = useNavigate();
-  const { shipment, loading, error } = useShipmentWithCheckpoints(submittedId || "");
 
   useEffect(() => {
     let active = true;
@@ -49,45 +47,28 @@ export default function UserChat() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!submittedId) return;
-    if (loading) return;
-
-    if (shipment) {
-      let active = true;
-      const openAuthorizedThread = async () => {
-        const thread = await ensureChatThread(submittedId);
-        if (!active) return;
-        if (!thread) {
-          setActiveThread(null);
-          setValidationError("You are not authorized to access this consignment conversation.");
-          return;
-        }
-        setActiveThread({ id: thread.id, trackingId: submittedId });
-        setValidationError(null);
-        setAlertNotice("Tracking ID verified");
-      };
-      void openAuthorizedThread();
-      const timer = window.setTimeout(() => setAlertNotice(null), 2000);
-      return () => {
-        active = false;
-        window.clearTimeout(timer);
-      };
-    }
-
-    setActiveThread(null);
-    setValidationError(error || "Tracking ID not found. Please check and try again.");
-  }, [submittedId, loading, shipment, error]);
-
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     if (!isAuthenticated) {
       navigate("/signin?next=/chat");
       return;
     }
     const value = trackingIdInput.trim();
     if (!value) return;
-    setSubmittedId(value);
+
+    setOpening(true);
     setValidationError(null);
+    const thread = await ensureChatThread(value);
+    setOpening(false);
+
+    if (!thread) {
+      setActiveThread(null);
+      setValidationError("Tracking ID not found or you are not authorized to access this conversation.");
+      return;
+    }
+
+    setActiveThread({ id: thread.id, trackingId: value });
+    setAlertNotice("Tracking ID verified");
+    window.setTimeout(() => setAlertNotice(null), 2000);
   };
 
   return (
@@ -122,14 +103,14 @@ export default function UserChat() {
                 type="button"
                 onClick={handleUnlock}
                 className="mt-6 w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-lg transition hover:bg-white/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={authLoading || (isAuthenticated && loading && submittedId === trackingIdInput.trim())}
+                disabled={authLoading || opening}
               >
                 {authLoading
                   ? "Checking account..."
                   : !isAuthenticated
                     ? "Sign In"
-                    : loading && submittedId === trackingIdInput.trim()
-                  ? "Verifying Tracking ID..."
+                    : opening
+                      ? "Verifying Tracking ID..."
                   : "Open Tracking Chat"}
               </button>
             </div>
